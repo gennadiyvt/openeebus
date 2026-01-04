@@ -444,23 +444,14 @@ static void MdnsProcessActiveResolves(Mdns* self, const fd_set* readfds) {
 }
 
 static bool MdnsHandleSelectResult(int result, bool* retry) {
-  if (retry != NULL) {
-    *retry = false;
+  if (result < 0) {
+    MDNS_DEBUG_PRINTF("select() returned %d errno %d %s\n", result, errno, strerror(errno));
+    if ((errno == EINTR) && (retry != NULL)) {
+      *retry = true;
+    }
   }
 
-  if (result > 0) {
-    return true;
-  } else if (result == 0) {
-    return false;
-  } else {
-    MDNS_DEBUG_PRINTF("select() returned %d errno %d %s\n", result, errno, strerror(errno));
-    if (errno == EINTR) {
-      if (retry != NULL) {
-        *retry = true;
-      }
-    }
-    return false;
-  }
+  return (result > 0);
 }
 
 static void MdnsProcessBrowseResults(Mdns* self) {
@@ -496,10 +487,8 @@ static void MdnsProcessBrowseResults(Mdns* self) {
           stop_handling = true;
         }
       }
-    } else if (retry) {
-      continue;
     } else {
-      stop_handling = true;
+      stop_handling = !retry;
     }
   }
 }
@@ -542,10 +531,8 @@ static void MdnsProcessResolveResults(Mdns* self) {
     bool retry = false;
     if (MdnsHandleSelectResult(result, &retry)) {
       MdnsProcessActiveResolves(self, &readfds);
-    } else if (retry) {
-      continue;
     } else {
-      stop_handling = true;
+      stop_handling = !retry;
     }
   }
 }
