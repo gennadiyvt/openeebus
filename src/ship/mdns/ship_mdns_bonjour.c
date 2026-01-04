@@ -195,6 +195,7 @@ static bool MdnsHasMatchingEntry(const Mdns* mdns, const MdnsEntry* candidate);
 static bool MdnsHandleSelectResult(int result, bool* retry);
 static void MdnsProcessBrowseResults(Mdns* self);
 static void MdnsProcessResolveResults(Mdns* self);
+static bool MdnsProcessActiveResolveEntry(ActiveResolveEntry* resolve, const fd_set* readfds);
 static void MdnsProcessActiveResolves(Mdns* self, const fd_set* readfds);
 static inline uint16_t OpaquePortToUint16(uint16_t opaque_port);
 static void MdnsResolveServiceCallback(
@@ -395,56 +396,51 @@ void Destruct(ShipMdnsObject* self) {
   mdns->device_info = NULL;
 }
 
-void MdnsProcessActiveResolves(Mdns* self, const fd_set* readfds) {
-  const size_t resolves_num = VectorGetSize(self->active_resolves);
-  if (resolves_num == 0) {
-    return;
+static bool MdnsProcessActiveResolveEntry(ActiveResolveEntry* resolve, const fd_set* readfds) {
+  if (resolve == NULL) {
+    return false;
   }
 
-  ActiveResolveEntry** resolves_to_remove
-      = (ActiveResolveEntry**)EEBUS_MALLOC(resolves_num * sizeof(ActiveResolveEntry*));
-  if (resolves_to_remove == NULL) {
-    return;
+  if (resolve->service_ref == NULL) {
+    MDNS_DEBUG_PRINTF("NULL service_ref in active resolve entry\n");
+    return true;
   }
 
-  uint32_t resolves_to_remove_idx = 0;
+  if (resolve->done) {
+    return true;
+  }
 
-  for (size_t i = 0; i < resolves_num; ++i) {
+  const int fd = DNSServiceRefSockFD(resolve->service_ref);
+  if (fd < 0) {
+    MDNS_DEBUG_PRINTF("Invalid resolve fd\n");
+    resolve->done = true;
+    return resolve->done;
+  }
+
+  if (FD_ISSET(fd, readfds)) {
+    DNSServiceErrorType err = DNSServiceProcessResult(resolve->service_ref);
+    if (err != kDNSServiceErr_NoError) {
+      MDNS_DEBUG_PRINTF("DNSServiceProcessResult resolve error %d\n", err);
+      resolve->done = true;
+    }
+  }
+
+  return resolve->done;
+}
+
+static void MdnsProcessActiveResolves(Mdns* self, const fd_set* readfds) {
+  size_t i = 0;
+
+  while (i < VectorGetSize(self->active_resolves)) {
     ActiveResolveEntry* const resolve = (ActiveResolveEntry*)VectorGetElement(self->active_resolves, i);
-    if ((resolve == NULL) || (resolve->service_ref == NULL)) {
-      continue;
-    }
 
-    if (resolve->done) {
-      resolves_to_remove[resolves_to_remove_idx++] = resolve;
-      continue;
-    }
-
-    const int fd = DNSServiceRefSockFD(resolve->service_ref);
-    if ((fd >= 0) && FD_ISSET(fd, readfds)) {
-      DNSServiceErrorType err = DNSServiceProcessResult(resolve->service_ref);
-      if (err != kDNSServiceErr_NoError) {
-        MDNS_DEBUG_PRINTF("DNSServiceProcessResult resolve error %d\n", err);
-        resolve->done = true;
-      }
-    }
-
-    if (resolve->done) {
-      resolves_to_remove[resolves_to_remove_idx++] = resolve;
-    }
-  }
-
-  // Remove completed resolve refs
-  const uint32_t resolves_to_remove_num = resolves_to_remove_idx;
-  for (uint32_t i = 0; i < resolves_to_remove_num; ++i) {
-    ActiveResolveEntry* const resolve = resolves_to_remove[i];
-    if (resolve != NULL) {
+    if (MdnsProcessActiveResolveEntry(resolve, readfds)) {
       VectorRemove(self->active_resolves, resolve);
       MdnsActiveResolveEntryDestroy(resolve);
+    } else {
+      ++i;
     }
   }
-
-  EEBUS_FREE(resolves_to_remove);
 }
 
 static bool MdnsHandleSelectResult(int result, bool* retry) {
