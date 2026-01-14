@@ -39,9 +39,12 @@ if(WIN32)
     set(VCPKG_ROOT $ENV{VCPKG_ROOT})
     set(VCPKG_INSTALLED "${VCPKG_ROOT}/installed/x64-windows")
     message(STATUS "Using vcpkg installed libraries from: ${VCPKG_INSTALLED}")
-    
+
     # Add vcpkg to CMAKE_PREFIX_PATH so find_package can locate packages
     list(APPEND CMAKE_PREFIX_PATH "${VCPKG_INSTALLED}")
+else()
+    # Use pkg-config on Linux/macOS for finding libraries
+    find_package(PkgConfig REQUIRED)
 endif()
 
 if (NOT WIN32)
