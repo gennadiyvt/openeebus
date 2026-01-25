@@ -221,6 +221,7 @@ void Destruct(ServiceReaderObject* self) {
   hems->ma_mpc_listener = NULL;
 
   EebusServiceConfigDelete(hems->cfg);
+  hems->cfg = NULL;
 }
 
 void OnRemoteSkiConnected(ServiceReaderObject* self, EebusServiceObject* service, const char* ski) {
