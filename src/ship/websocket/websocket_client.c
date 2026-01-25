@@ -294,6 +294,11 @@ void Destruct(WebsocketObject* self) {
   }
 
   if (ws->lws_connect_info != NULL) {
+    if (ws->lws_connect_info->path != NULL) {
+      StringDelete((char*)ws->lws_connect_info->path);
+      ws->lws_connect_info->path = NULL;
+    }
+
     EEBUS_FREE(ws->lws_connect_info);
     ws->lws_connect_info = NULL;
   }
