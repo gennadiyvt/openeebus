@@ -28,6 +28,7 @@ extern "C" {
 #endif  // __cplusplus
 
 CmdType* CmdCreateEmpty(void);
+CmdType* CmdCopy(const CmdType* cmd);
 void CmdDelete(CmdType* cmd);
 const FilterType* CmdGetFilterPartial(const CmdType* cmd);
 const FilterType* CmdGetFilterDelete(const CmdType* cmd);

@@ -59,22 +59,39 @@ struct EntityLocalInterface {
   HeartbeatManagerObject* (*get_heartbeat_manager)(const EntityLocalObject* self);
   void (*add_feature)(EntityLocalObject* self, FeatureLocalObject* feature);
   FeatureLocalObject* (*get_feature_with_type_and_role)(
-      const EntityLocalObject* self, FeatureTypeType feature_type, RoleType role);
+      const EntityLocalObject* self,
+      FeatureTypeType feature_type,
+      RoleType role
+  );
   FeatureLocalObject* (*add_feature_with_type_and_role)(
-      EntityLocalObject* self, FeatureTypeType feature_type, RoleType role);
+      EntityLocalObject* self,
+      FeatureTypeType feature_type,
+      RoleType role
+  );
   FeatureLocalObject* (*get_feature_with_id)(const EntityLocalObject* self, const uint32_t* feature_id);
   const Vector* (*get_features)(const EntityLocalObject* self);
-  void (*add_use_case_support)(EntityLocalObject* self, UseCaseActorType actor, UseCaseNameType use_case_name_id,
-      SpecificationVersionType version, const char* sub_revision, bool available,
-      const UseCaseScenarioSupportType* scenarios, size_t scenarios_size);
+  void (*add_use_case_support)(
+      EntityLocalObject* self,
+      UseCaseActorType actor,
+      UseCaseNameType use_case_name_id,
+      SpecificationVersionType version,
+      const char* sub_revision,
+      bool available,
+      const UseCaseScenarioSupportType* scenarios,
+      size_t scenarios_size
+  );
   bool (*has_use_case_support)(const EntityLocalObject* self, const UseCaseFilterType* use_case_filter);
   void (*set_use_case_availability)(EntityLocalObject* self, const UseCaseFilterType* use_case_filter, bool available);
   void (*remove_use_case_supports)(
-      EntityLocalObject* self, const UseCaseFilterType* use_case_filters, size_t use_case_filters_size);
+      EntityLocalObject* self,
+      const UseCaseFilterType* use_case_filters,
+      size_t use_case_filters_size
+  );
   void (*remove_all_use_case_supports)(EntityLocalObject* self);
   void (*remove_all_subscriptions)(EntityLocalObject* self);
   void (*remove_all_bindings)(EntityLocalObject* self);
   NodeManagementDetailedDiscoveryEntityInformationType* (*create_information)(const EntityLocalObject* self);
+  void (*tick)(EntityLocalObject* self);
 };
 
 /**
@@ -135,10 +152,26 @@ struct EntityLocalObject {
 /**
  * @brief Entity Local Add Use Case Support caller definition
  */
-#define ENTITY_LOCAL_ADD_USE_CASE_SUPPORT(                                                     \
-    obj, actor, use_case_name_id, version, sub_revision, available, scenarios, scenarios_size) \
-  (ENTITY_LOCAL_INTERFACE(obj)->add_use_case_support(                                          \
-      obj, actor, use_case_name_id, version, sub_revision, available, scenarios, scenarios_size))
+#define ENTITY_LOCAL_ADD_USE_CASE_SUPPORT(            \
+    obj,                                              \
+    actor,                                            \
+    use_case_name_id,                                 \
+    version,                                          \
+    sub_revision,                                     \
+    available,                                        \
+    scenarios,                                        \
+    scenarios_size                                    \
+)                                                     \
+  (ENTITY_LOCAL_INTERFACE(obj)->add_use_case_support( \
+      obj,                                            \
+      actor,                                          \
+      use_case_name_id,                               \
+      version,                                        \
+      sub_revision,                                   \
+      available,                                      \
+      scenarios,                                      \
+      scenarios_size                                  \
+  ))
 
 /**
  * @brief Entity Local Has Use Case Support caller definition
@@ -177,6 +210,11 @@ struct EntityLocalObject {
  * @brief Entity Local Create Information caller definition
  */
 #define ENTITY_LOCAL_CREATE_INFORMATION(obj) (ENTITY_LOCAL_INTERFACE(obj)->create_information(obj))
+
+/**
+ * @brief Entity Local Tick caller definition
+ */
+#define ENTITY_LOCAL_TICK(obj) (ENTITY_LOCAL_INTERFACE(obj)->tick(obj))
 
 #ifdef __cplusplus
 }

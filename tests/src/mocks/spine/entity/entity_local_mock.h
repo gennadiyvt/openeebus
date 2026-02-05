@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "entity_mock.h"
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/entity_local_interface.h"
 
 class EntityLocalGMockInterface : public EntityGMockInterface {
@@ -64,6 +65,7 @@ class EntityLocalGMockInterface : public EntityGMockInterface {
   virtual void RemoveAllSubscriptions(EntityLocalObject* self)                                                   = 0;
   virtual void RemoveAllBindings(EntityLocalObject* self)                                                        = 0;
   virtual NodeManagementDetailedDiscoveryEntityInformationType* CreateInformation(const EntityLocalObject* self) = 0;
+  virtual void Tick(EntityLocalObject* self)                                                                     = 0;
 };
 
 class EntityLocalGMock : public EntityLocalGMockInterface {
@@ -102,6 +104,7 @@ class EntityLocalGMock : public EntityLocalGMockInterface {
   MOCK_METHOD1(RemoveAllSubscriptions, void(EntityLocalObject*));
   MOCK_METHOD1(RemoveAllBindings, void(EntityLocalObject*));
   MOCK_METHOD1(CreateInformation, NodeManagementDetailedDiscoveryEntityInformationType*(const EntityLocalObject*));
+  MOCK_METHOD1(Tick, void(EntityLocalObject*));
 };
 
 typedef struct EntityLocalMock {
@@ -113,5 +116,12 @@ typedef struct EntityLocalMock {
 #define ENTITY_LOCAL_MOCK(obj) ((EntityLocalMock*)(obj))
 
 EntityLocalMock* EntityLocalMockCreate(void);
+
+static inline void EntityLocalMockDelete(EntityLocalMock* self) {
+  if (self != nullptr) {
+    ENTITY_DESTRUCT(ENTITY_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_ENTITY_ENTITY_LOCAL_MOCK_H_

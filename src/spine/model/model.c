@@ -31,13 +31,21 @@
 // SPINE Model functions for unit tests purpose only
 //
 //---------------------------------------------------------------------------//
-const EnumMapping* ModelGetFunctionEnumCfg(void) { return function_lut; }
+const EnumMapping* ModelGetFunctionEnumCfg(void) {
+  return function_lut;
+}
 
-const EebusDataCfg* ModelGetSelectorsChoiceCfg(void) { return data_selectors_choice_data_cfg; }
+const EebusDataCfg* ModelGetSelectorsChoiceCfg(void) {
+  return data_selectors_choice_data_cfg;
+}
 
-const EebusDataCfg* ModelGetElementsChoiceCfg(void) { return data_elements_choice_data_cfg; }
+const EebusDataCfg* ModelGetElementsChoiceCfg(void) {
+  return data_elements_choice_data_cfg;
+}
 
-const EebusDataCfg* ModelGetDataChoiceCfg(void) { return data_choice_data_cfg; }
+const EebusDataCfg* ModelGetDataChoiceCfg(void) {
+  return data_choice_data_cfg;
+}
 
 bool ModelIsTimestampInterval(const EebusDataCfg* cfg) {
   if ((cfg == NULL) || (!EEBUS_DATA_IS_SEQUENCE(cfg))) {
@@ -57,24 +65,38 @@ const EebusDataCfg* GetFilterCfg(void) {
 // EEBUS Data Configuration getters
 //
 //---------------------------------------------------------------------------//
-const EebusDataCfg* ModelGetDatagramCfg(void) { return &datagram_data_cfg; }
+const EebusDataCfg* ModelGetDatagramCfg(void) {
+  return &datagram_data_cfg;
+}
 
-const EebusDataCfg* ModelGetFeatureAddressCfg(void) { return feature_address_cfg; }
+const EebusDataCfg* ModelGetFeatureAddressCfg(void) {
+  return feature_address_cfg;
+}
 
 const EebusDataCfg* ModelGetEntityAddressCfg(void) {
   static const EebusDataCfg entity_address_tmp_cfg = EEBUS_DATA_SEQUENCE_TMP(FeatureAddressType, entity_address_cfg);
   return &entity_address_tmp_cfg;
 }
 
-const EebusDataCfg* ModelGetFeatureAddressElementsCfg(void) { return feature_address_elements_cfg; }
+const EebusDataCfg* ModelGetFeatureAddressElementsCfg(void) {
+  return feature_address_elements_cfg;
+}
 
-const EebusDataCfg* ModelGetFunctionPropertyCfg(void) { return function_property_cfg; }
+const EebusDataCfg* ModelGetFunctionPropertyCfg(void) {
+  return function_property_cfg;
+}
 
-const EebusDataCfg* ModelGetFunctionPropertyElementsCfg(void) { return function_property_elements_cfg; }
+const EebusDataCfg* ModelGetFunctionPropertyElementsCfg(void) {
+  return function_property_elements_cfg;
+}
 
-const EebusDataCfg* ModelGetPossibleOperationsCfg(void) { return possible_operations_cfg; }
+const EebusDataCfg* ModelGetPossibleOperationsCfg(void) {
+  return possible_operations_cfg;
+}
 
-const EebusDataCfg* ModelGetCmdCfg(void) { return &cmd_element_data_cfg; }
+const EebusDataCfg* ModelGetCmdCfg(void) {
+  return &cmd_element_data_cfg;
+}
 
 const EebusDataCfg* ModelGetDataCfg(FunctionType function_type) {
   if (function_type >= kFunctionTypeNum) {
@@ -83,6 +105,10 @@ const EebusDataCfg* ModelGetDataCfg(FunctionType function_type) {
   }
 
   return &data_choice_data_cfg[function_type];
+}
+
+const EebusDataCfg* ModelGetHeaderCfg(void) {
+  return &datagram_sequence_data_cfg[0];
 }
 
 const EebusDataCfg* ModelGetDataSelectorsCfg(FunctionType function_type) {
@@ -105,21 +131,35 @@ const EebusDataCfg* ModelGetDataElementsCfg(FunctionType function_type) {
 
 const EebusDataCfg* ModelGetDetailedDiscoveryDeviceInfoCfg(void) {
   static const EebusDataCfg cfg = EEBUS_DATA_SEQUENCE_TMP(
-      NodeManagementDetailedDiscoveryDeviceInformationType, node_management_detailed_discovery_device_information_cfg);
+      NodeManagementDetailedDiscoveryDeviceInformationType,
+      node_management_detailed_discovery_device_information_cfg
+  );
   return &cfg;
 }
 
-const EebusDataCfg* ModelGetDetailedDiscoveryEntityInfoCfg(void) { return &entity_information_element_data_cfg; }
+const EebusDataCfg* ModelGetDetailedDiscoveryEntityInfoCfg(void) {
+  return &entity_information_element_data_cfg;
+}
 
-const EebusDataCfg* ModelGetDetailedDiscoveryFeatureInfoCfg(void) { return &feature_information_element_data_cfg; }
+const EebusDataCfg* ModelGetDetailedDiscoveryFeatureInfoCfg(void) {
+  return &feature_information_element_data_cfg;
+}
 
-const EebusDataCfg* ModelGetSubscriptionManagementEntryDataCfg(void) { return &subscription_entry_element_data_cfg; }
+const EebusDataCfg* ModelGetSubscriptionManagementEntryDataCfg(void) {
+  return &subscription_entry_element_data_cfg;
+}
 
-const EebusDataCfg* ModelGetBindingManagementEntryDataCfg(void) { return &binding_entry_element_data_cfg; }
+const EebusDataCfg* ModelGetBindingManagementEntryDataCfg(void) {
+  return &binding_entry_element_data_cfg;
+}
 
-const EebusDataCfg* ModelGetDestinationDataCfg(void) { return &node_management_destination_data_element_data_cfg; }
+const EebusDataCfg* ModelGetDestinationDataCfg(void) {
+  return &node_management_destination_data_element_data_cfg;
+}
 
-const EebusDataCfg* ModelGetUseCaseInformationDataCfg(void) { return &use_case_information_data_element_data_cfg; }
+const EebusDataCfg* ModelGetUseCaseInformationDataCfg(void) {
+  return &use_case_information_data_element_data_cfg;
+}
 
 const EebusDataCfg* ModelGetUseCaseSupportElementDataCfg(void) {
   return &use_case_support_element_data_cfg;
@@ -131,7 +171,11 @@ void* ModelDataCreateEmpty(const EebusDataCfg* cfg) {
   return data;
 }
 
-void ModelDataDelete(const EebusDataCfg* cfg, const void* data) {
+void ModelDataDelete(const EebusDataCfg* cfg, void* data) {
+  if ((data == NULL) || (cfg == NULL)) {
+    return;
+  }
+
   EEBUS_DATA_DELETE(cfg, &data);
 }
 

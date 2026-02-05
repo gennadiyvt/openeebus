@@ -18,8 +18,8 @@
  * @brief Http Server Mock "class"
  */
 
-#ifndef TESTS_SRC_EEBUS_SRC_SHIP_WEBSOCKET_HTTP_SERVER_MOCK_H_
-#define TESTS_SRC_EEBUS_SRC_SHIP_WEBSOCKET_HTTP_SERVER_MOCK_H_
+#ifndef TESTS_SRC_MOCKS_SHIP_WEBSOCKET_HTTP_SERVER_MOCK_H_
+#define TESTS_SRC_MOCKS_SHIP_WEBSOCKET_HTTP_SERVER_MOCK_H_
 
 #include <gmock/gmock.h>
 
@@ -53,4 +53,4 @@ typedef struct HttpServerMock {
 
 HttpServerMock* HttpServerMockCreate(void);
 
-#endif  // TESTS_SRC_EEBUS_SRC_SHIP_WEBSOCKET_HTTP_SERVER_MOCK_H_
+#endif  // TESTS_SRC_MOCKS_SHIP_WEBSOCKET_HTTP_SERVER_MOCK_H_

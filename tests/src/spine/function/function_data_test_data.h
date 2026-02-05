@@ -18,8 +18,8 @@
  * @brief Function Data Json print/parse functions for test purpose
  */
 
-#ifndef TESTS_SRC_SPINE_FUNCTION_FUNCTION_DATA_JSON_H_
-#define TESTS_SRC_SPINE_FUNCTION_FUNCTION_DATA_JSON_H_
+#ifndef TESTS_SRC_SPINE_FUNCTION_FUNCTION_DATA_TEST_DATA_H_
+#define TESTS_SRC_SPINE_FUNCTION_FUNCTION_DATA_TEST_DATA_H_
 
 #include "tests/src/spine/function_data.h"
 
@@ -27,4 +27,4 @@ std::unique_ptr<FunctionData, decltype(&FunctionDataDelete)> FunctionDataTestDat
     FunctionType function_type, const std::string_view& s);
 std::unique_ptr<char[], decltype(&JsonFree)> FunctionDataTestDataPrint(const FunctionData* fd);
 
-#endif  // TESTS_SRC_SPINE_FUNCTION_FUNCTION_DATA_JSON_H_
+#endif  // TESTS_SRC_SPINE_FUNCTION_FUNCTION_DATA_TEST_DATA_H_

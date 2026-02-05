@@ -21,9 +21,9 @@
 #include "feature_local_mock.h"
 
 #include <gmock/gmock.h>
-#include <jpi/osal/osal.h>
+#include "src/common/eebus_malloc.h"
 
-#include "src/ship/api/feature_local_interface.h"
+#include "src/spine/api/feature_local_interface.h"
 
 static DeviceLocalObject* GetDevice(const FeatureLocalObject* self);
 static EntityLocalObject* GetEntity(const FeatureLocalObject* self);
@@ -33,7 +33,8 @@ static EebusError
 AddResponseCallback(FeatureLocalObject* self, MsgCounterType msg_counter_ref, ResponseMessageCallback cb, void* ctx);
 static void AddResultCallback(FeatureLocalObject* self, ResponseMessageCallback cb, void* ctx);
 static EebusError AddWriteApprovalCallback(FeatureLocalObject* self, WriteApprovalCallback cb, void* ctx);
-static void ApproveOrDenyWrite(FeatureLocalObject* self, const Message* msg, const ErrorType* err);
+static EebusError TryApproveWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt);
+static EebusError DenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, EebusError err_num);
 static void CleanRemoteDeviceCaches(FeatureLocalObject* self, const DeviceAddressType* remote_addr);
 static void* DataCopy(const FeatureLocalObject* self, FunctionType function_type);
 static EebusError UpdateData(
@@ -68,6 +69,7 @@ static EebusError RemoveRemoteBinding(FeatureLocalObject* self, const FeatureAdd
 static void RemoveAllRemoteBindings(FeatureLocalObject* self);
 static EebusError HandleMessage(FeatureLocalObject* self, const Message* msg);
 static NodeManagementDetailedDiscoveryFeatureInformationType* CreateInformation(const FeatureLocalObject* self);
+static void Tick(FeatureLocalObject* self);
 
 static const FeatureLocalInterface feature_local_methods = {
     .feature_interface = {
@@ -88,7 +90,8 @@ static const FeatureLocalInterface feature_local_methods = {
     .add_response_callback                 = AddResponseCallback,
     .add_result_callback                   = AddResultCallback,
     .add_write_approval_callback           = AddWriteApprovalCallback,
-    .approve_or_deny_write                 = ApproveOrDenyWrite,
+    .try_approve_write                     = TryApproveWrite,
+    .deny_write                            = DenyWrite,
     .clean_remote_device_caches            = CleanRemoteDeviceCaches,
     .data_copy                             = DataCopy,
     .update_data                           = UpdateData,
@@ -105,6 +108,7 @@ static const FeatureLocalInterface feature_local_methods = {
     .remove_all_remote_bindings            = RemoveAllRemoteBindings,
     .handle_message                        = HandleMessage,
     .create_information                    = CreateInformation,
+    .tick                                  = Tick,
 };
 
 static void FeatureLocalMockConstruct(FeatureLocalMock* self);
@@ -201,9 +205,14 @@ EebusError AddWriteApprovalCallback(FeatureLocalObject* self, WriteApprovalCallb
   return mock->gmock->AddWriteApprovalCallback(self, cb, ctx);
 }
 
-void ApproveOrDenyWrite(FeatureLocalObject* self, const Message* msg, const ErrorType* err) {
+EebusError TryApproveWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt) {
   FeatureLocalMock* const mock = FEATURE_LOCAL_MOCK(self);
-  mock->gmock->ApproveOrDenyWrite(self, msg, err);
+  return mock->gmock->TryApproveWrite(self, ski, msg_cnt);
+}
+
+EebusError DenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, EebusError err_num) {
+  FeatureLocalMock* const mock = FEATURE_LOCAL_MOCK(self);
+  return mock->gmock->DenyWrite(self, ski, msg_cnt, err_num);
 }
 
 void CleanRemoteDeviceCaches(FeatureLocalObject* self, const DeviceAddressType* remote_addr) {
@@ -302,4 +311,9 @@ EebusError HandleMessage(FeatureLocalObject* self, const Message* msg) {
 NodeManagementDetailedDiscoveryFeatureInformationType* CreateInformation(const FeatureLocalObject* self) {
   FeatureLocalMock* const mock = FEATURE_LOCAL_MOCK(self);
   return mock->gmock->CreateInformation(self);
+}
+
+void Tick(FeatureLocalObject* self) {
+  FeatureLocalMock* const mock = FEATURE_LOCAL_MOCK(self);
+  mock->gmock->Tick(self);
 }

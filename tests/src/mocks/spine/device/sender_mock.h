@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/sender_interface.h"
 
 class SenderGMockInterface {
@@ -112,5 +113,12 @@ typedef struct SenderMock {
 #define SENDER_MOCK(obj) ((SenderMock*)(obj))
 
 SenderMock* SenderMockCreate(void);
+
+static inline void SenderMockDelete(SenderMock* self) {
+  if (self != nullptr) {
+    SENDER_DESTRUCT(SENDER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_DEVICE_SENDER_MOCK_H_

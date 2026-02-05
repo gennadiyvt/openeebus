@@ -47,7 +47,8 @@ static const FeatureLocalInterface node_management_methods = {
     .add_response_callback                 = FeatureLocalAddResponseCallback,
     .add_result_callback                   = FeatureLocalAddResultCallback,
     .add_write_approval_callback           = FeatureLocalAddWriteApprovalCallback,
-    .approve_or_deny_write                 = FeatureLocalApproveOrDenyWrite,
+    .try_approve_write                     = FeatureLocalTryApproveWrite,
+    .deny_write                            = FeatureLocalDenyWrite,
     .clean_remote_device_caches            = FeatureLocalCleanRemoteDeviceCaches,
     .data_copy                             = FeatureLocalDataCopy,
     .update_data                           = FeatureLocalUpdateData,
@@ -64,6 +65,7 @@ static const FeatureLocalInterface node_management_methods = {
     .remove_all_remote_bindings            = FeatureLocalRemoveAllRemoteBindings,
     .handle_message                        = HandleMessage,
     .create_information                    = FeatureLocalCreateInformation,
+    .tick                                  = FeatureLocalTick,
 };
 
 static void NodeManagementConstruct(NodeManagement* self, uint32_t id, EntityLocalObject* entity);
@@ -100,8 +102,8 @@ NodeManagementObject* NodeManagementCreate(uint32_t id, EntityLocalObject* entit
   return NODE_MANAGEMENT_OBJECT(node_management);
 }
 
-EebusError NodeManagementSendReply(
-    const NodeManagement* self, const void* data, FunctionType data_type, const Message* msg) {
+EebusError
+NodeManagementSendReply(const NodeManagement* self, const void* data, FunctionType data_type, const Message* msg) {
   CmdType cmd = {
       .data_choice         = (void*)data,
       .data_choice_type_id = data_type,

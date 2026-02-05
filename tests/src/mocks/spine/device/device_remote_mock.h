@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "device_mock.h"
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/device_remote_interface.h"
 
 class DeviceRemoteGMockInterface : public DeviceGMockInterface {
@@ -109,5 +110,12 @@ typedef struct DeviceRemoteMock {
 #define DEVICE_REMOTE_MOCK(obj) ((DeviceRemoteMock*)(obj))
 
 DeviceRemoteMock* DeviceRemoteMockCreate(void);
+
+static inline void DeviceRemoteMockDelete(DeviceRemoteMock* self) {
+  if (self != nullptr) {
+    DEVICE_DESTRUCT(DEVICE_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_DEVICE_DEVICE_REMOTE_MOCK_H_

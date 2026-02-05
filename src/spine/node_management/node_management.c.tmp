@@ -6,6 +6,8 @@ EebusError AddResponseCallback(MsgCounterType msg_counter_ref, ResponseMessageCa
 void AddResultCallback(ResponseMessageCallback cb, void* ctx)
 EebusError AddWriteApprovalCallback(WriteApprovalCallback cb, void* ctx)
 void ApproveOrDenyWrite(const Message* msg, const ErrorType* err)
+EebusError TryApproveWrite(const char* ski, MsgCounterType msg_cnt)
+EebusError DenyWrite(const char* ski, MsgCounterType msg_cnt, EebusError err_num)
 FunctionData* DataCopy(FunctionType function_type) const
 EebusError UpdateData(FunctionType fcn_type, void* data, FilterType* filter_partial, FilterType* filter_delete, bool wr_remote)
 void SetData(FunctionType function_type, void* data)

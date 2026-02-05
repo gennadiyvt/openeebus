@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "entity_mock.h"
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/entity_remote_interface.h"
 
 class EntityRemoteGMockInterface : public EntityGMockInterface {
@@ -69,5 +70,12 @@ typedef struct EntityRemoteMock {
 #define ENTITY_REMOTE_MOCK(obj) ((EntityRemoteMock*)(obj))
 
 EntityRemoteMock* EntityRemoteMockCreate(void);
+
+static inline void EntityRemoteMockDelete(EntityRemoteMock* self) {
+  if (self != nullptr) {
+    ENTITY_DESTRUCT(ENTITY_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_ENTITY_ENTITY_REMOTE_MOCK_H_

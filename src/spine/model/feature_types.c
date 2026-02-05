@@ -69,6 +69,9 @@ bool FeatureAddressCompare(const FeatureAddressType* addr_a, const FeatureAddres
 }
 
 void FeatureAddressDelete(FeatureAddressType* self) {
+  if (self == NULL) {
+    return;
+  }
   EebusDataCfg cfg = EEBUS_DATA_SEQUENCE_TMP(FeatureAddressType, ModelGetFeatureAddressCfg());
   EEBUS_DATA_DELETE(&cfg, &self);
 }

@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "feature_mock.h"
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/feature_remote_interface.h"
 
 class FeatureRemoteGMockInterface : public FeatureGMockInterface {
@@ -85,5 +86,12 @@ typedef struct FeatureRemoteMock {
 #define FEATURE_REMOTE_MOCK(obj) ((FeatureRemoteMock*)(obj))
 
 FeatureRemoteMock* FeatureRemoteMockCreate(void);
+
+static inline void FeatureRemoteMockDelete(FeatureRemoteMock* self) {
+  if (self != nullptr) {
+    FEATURE_DESTRUCT(FEATURE_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_FEATURE_FEATURE_REMOTE_MOCK_H_

@@ -293,6 +293,8 @@ void DeviceLocalTick(DeviceLocalObject* self) {
   for (size_t i = 0; i < VectorGetSize(&dl->entities); ++i) {
     EntityLocalObject* const entity = (EntityLocalObject*)VectorGetElement(&dl->entities, i);
 
+    ENTITY_LOCAL_TICK(entity);
+
     HeartbeatManagerObject* hbm = ENTITY_LOCAL_GET_HEARTBEAT_MANAGER(entity);
     if (hbm != NULL) {
       HEARTBEAT_MANAGER_TICK(hbm);

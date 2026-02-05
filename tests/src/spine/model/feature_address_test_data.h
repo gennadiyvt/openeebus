@@ -19,8 +19,8 @@
  * with aim to simplify tabulating unit test expected values
  */
 
-#ifndef TESTS_SRC_SPINE_DATAGRAM_FEATURE_ADDRESS_H
-#define TESTS_SRC_SPINE_DATAGRAM_FEATURE_ADDRESS_H
+#ifndef TESTS_SRC_SPINE_MODEL_FEATURE_ADDRESS_TEST_DATA_H
+#define TESTS_SRC_SPINE_MODEL_FEATURE_ADDRESS_TEST_DATA_H
 
 #include <stdint.h>
 
@@ -95,4 +95,4 @@ FeatureAddressType* TestDataToFeatureAddress(const FeatureAddressTestData* addr)
 #define FEATURE_ADDRESS_TEST_DATA(d, e, f) \
   ValuePtrCreate<FeatureAddressTestData>((d), std::vector<uint32_t>(e), ValuePtrCreate<uint32_t>(f))
 
-#endif  // TESTS_SRC_SPINE_DATAGRAM_FEATURE_ADDRESS_H
+#endif  // TESTS_SRC_SPINE_MODEL_FEATURE_ADDRESS_TEST_DATA_H

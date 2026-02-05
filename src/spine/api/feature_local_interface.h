@@ -74,10 +74,15 @@ struct FeatureLocalInterface {
   const void* (*get_data)(const FeatureLocalObject* self, FunctionType function_type);
   void (*set_function_operations)(FeatureLocalObject* self, FunctionType type, bool read, bool write);
   EebusError (*add_response_callback)(
-      FeatureLocalObject* self, MsgCounterType msg_counter_ref, ResponseMessageCallback cb, void* ctx);
+      FeatureLocalObject* self,
+      MsgCounterType msg_counter_ref,
+      ResponseMessageCallback cb,
+      void* ctx
+  );
   void (*add_result_callback)(FeatureLocalObject* self, ResponseMessageCallback cb, void* ctx);
   EebusError (*add_write_approval_callback)(FeatureLocalObject* self, WriteApprovalCallback cb, void* ctx);
-  void (*approve_or_deny_write)(FeatureLocalObject* self, const Message* msg, const ErrorType* err);
+  EebusError (*try_approve_write)(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt);
+  EebusError (*deny_write)(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, EebusError err_num);
   void (*clean_remote_device_caches)(FeatureLocalObject* self, const DeviceAddressType* remote_addr);
   void* (*data_copy)(const FeatureLocalObject* self, FunctionType function_type);
   EebusError (*update_data)(
@@ -88,10 +93,20 @@ struct FeatureLocalInterface {
       const FilterType* filter_delete
   );
   void (*set_data)(FeatureLocalObject* self, FunctionType function_type, void* data);
-  EebusError (*request_remote_data)(FeatureLocalObject* self, FunctionType function_type,
-      const FilterType* filter_partial, FeatureRemoteObject* dest_feature);
-  EebusError (*request_remote_data_by_sender_address)(FeatureLocalObject* self, const CmdType* cmd,
-      SenderObject* sender, const char* dest_ski, const FeatureAddressType* dest_addr, uint32_t max_delay);
+  EebusError (*request_remote_data)(
+      FeatureLocalObject* self,
+      FunctionType function_type,
+      const FilterType* filter_partial,
+      FeatureRemoteObject* dest_feature
+  );
+  EebusError (*request_remote_data_by_sender_address)(
+      FeatureLocalObject* self,
+      const CmdType* cmd,
+      SenderObject* sender,
+      const char* dest_ski,
+      const FeatureAddressType* dest_addr,
+      uint32_t max_delay
+  );
   bool (*has_subscription_to_remote)(const FeatureLocalObject* self, const FeatureAddressType* remote_addr);
   EebusError (*subscribe_to_remote)(FeatureLocalObject* self, const FeatureAddressType* remote_addr);
   EebusError (*remove_remote_subscription)(FeatureLocalObject* self, const FeatureAddressType* remote_addr);
@@ -102,6 +117,7 @@ struct FeatureLocalInterface {
   void (*remove_all_remote_bindings)(FeatureLocalObject* self);
   EebusError (*handle_message)(FeatureLocalObject* self, const Message* msg);
   NodeManagementDetailedDiscoveryFeatureInformationType* (*create_information)(const FeatureLocalObject* self);
+  void (*tick)(FeatureLocalObject* self);
 };
 
 /**
@@ -161,10 +177,16 @@ struct FeatureLocalObject {
   (FEATURE_LOCAL_INTERFACE(obj)->add_write_approval_callback(obj, cb, ctx))
 
 /**
- * @brief Feature Local Approve Or Deny Write caller definition
+ * @brief Feature Local Try Approve Write caller definition
  */
-#define FEATURE_LOCAL_APPROVE_OR_DENY_WRITE(obj, msg, err) \
-  (FEATURE_LOCAL_INTERFACE(obj)->approve_or_deny_write(obj, msg, err))
+#define FEATURE_LOCAL_TRY_APPROVE_WRITE(obj, ski, msg_cnt) \
+  (FEATURE_LOCAL_INTERFACE(obj)->try_approve_write(obj, ski, msg_cnt))
+
+/**
+ * @brief Feature Local Deny Write caller definition
+ */
+#define FEATURE_LOCAL_DENY_WRITE(obj, ski, msg_cnt, err_num) \
+  (FEATURE_LOCAL_INTERFACE(obj)->deny_write(obj, ski, msg_cnt, err_num))
 
 /**
  * @brief Feature Local Clean Remote Device Caches caller definition
@@ -199,8 +221,8 @@ struct FeatureLocalObject {
  * @brief Feature Local Request Remote Data By Sender Address caller definition
  */
 #define FEATURE_LOCAL_REQUEST_REMOTE_DATA_BY_SENDER_ADDRESS(obj, cmd, sender, dest_ski, dest_addr, max_delay) \
-  (FEATURE_LOCAL_INTERFACE(obj)->request_remote_data_by_sender_address(                                       \
-      obj, cmd, sender, dest_ski, dest_addr, max_delay))
+  (FEATURE_LOCAL_INTERFACE(obj)                                                                               \
+       ->request_remote_data_by_sender_address(obj, cmd, sender, dest_ski, dest_addr, max_delay))
 
 /**
  * @brief Feature Local Has Subscription To Remote caller definition
@@ -257,6 +279,11 @@ struct FeatureLocalObject {
  * @brief Feature Local Create Information caller definition
  */
 #define FEATURE_LOCAL_CREATE_INFORMATION(obj) (FEATURE_LOCAL_INTERFACE(obj)->create_information(obj))
+
+/**
+ * @brief Feature Local Tick caller definition
+ */
+#define FEATURE_LOCAL_TICK(obj) (FEATURE_LOCAL_INTERFACE(obj)->tick(obj))
 
 #ifdef __cplusplus
 }

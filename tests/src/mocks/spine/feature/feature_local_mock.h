@@ -40,9 +40,11 @@ class FeatureLocalGMockInterface : public FeatureGMockInterface {
       = 0;
   virtual void AddResultCallback(FeatureLocalObject* self, ResponseMessageCallback cb, void* ctx)            = 0;
   virtual EebusError AddWriteApprovalCallback(FeatureLocalObject* self, WriteApprovalCallback cb, void* ctx) = 0;
-  virtual void ApproveOrDenyWrite(FeatureLocalObject* self, const Message* msg, const ErrorType* err)        = 0;
-  virtual void CleanRemoteDeviceCaches(FeatureLocalObject* self, const DeviceAddressType* remote_addr)       = 0;
-  virtual void* DataCopy(const FeatureLocalObject* self, FunctionType function_type)                         = 0;
+  virtual EebusError TryApproveWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt)      = 0;
+  virtual EebusError DenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, EebusError err_num)
+      = 0;
+  virtual void CleanRemoteDeviceCaches(FeatureLocalObject* self, const DeviceAddressType* remote_addr) = 0;
+  virtual void* DataCopy(const FeatureLocalObject* self, FunctionType function_type)                   = 0;
   virtual EebusError UpdateData(
       FeatureLocalObject* self,
       FunctionType fcn_type,
@@ -75,6 +77,7 @@ class FeatureLocalGMockInterface : public FeatureGMockInterface {
   virtual void RemoveAllRemoteBindings(FeatureLocalObject* self)                                                   = 0;
   virtual EebusError HandleMessage(FeatureLocalObject* self, const Message* msg)                                   = 0;
   virtual NodeManagementDetailedDiscoveryFeatureInformationType* CreateInformation(const FeatureLocalObject* self) = 0;
+  virtual void Tick(FeatureLocalObject* self)                                                                      = 0;
 };
 
 class FeatureLocalGMock : public FeatureLocalGMockInterface {
@@ -95,7 +98,8 @@ class FeatureLocalGMock : public FeatureLocalGMockInterface {
   MOCK_METHOD4(AddResponseCallback, EebusError(FeatureLocalObject*, MsgCounterType, ResponseMessageCallback, void*));
   MOCK_METHOD3(AddResultCallback, void(FeatureLocalObject*, ResponseMessageCallback, void*));
   MOCK_METHOD3(AddWriteApprovalCallback, EebusError(FeatureLocalObject*, WriteApprovalCallback, void*));
-  MOCK_METHOD3(ApproveOrDenyWrite, void(FeatureLocalObject*, const Message*, const ErrorType*));
+  MOCK_METHOD3(TryApproveWrite, EebusError(FeatureLocalObject*, const char*, MsgCounterType));
+  MOCK_METHOD4(DenyWrite, EebusError(FeatureLocalObject*, const char*, MsgCounterType, EebusError));
   MOCK_METHOD2(CleanRemoteDeviceCaches, void(FeatureLocalObject*, const DeviceAddressType*));
   MOCK_METHOD2(DataCopy, void*(const FeatureLocalObject*, FunctionType));
   MOCK_METHOD5(
@@ -121,6 +125,7 @@ class FeatureLocalGMock : public FeatureLocalGMockInterface {
   MOCK_METHOD1(RemoveAllRemoteBindings, void(FeatureLocalObject*));
   MOCK_METHOD2(HandleMessage, EebusError(FeatureLocalObject*, const Message*));
   MOCK_METHOD1(CreateInformation, NodeManagementDetailedDiscoveryFeatureInformationType*(const FeatureLocalObject*));
+  MOCK_METHOD1(Tick, void(FeatureLocalObject*));
 };
 
 typedef struct FeatureLocalMock {

@@ -15,23 +15,30 @@
  */
 /**
  * @file
- * @brief Command Json print/parse functions for test purpose
+ * @brief Pending Write Request implementation declarations
  */
 
-#ifndef TESTS_SRC_SPINE_FUNCTION_CMD_TEST_DATA_H_
-#define TESTS_SRC_SPINE_FUNCTION_CMD_TEST_DATA_H_
+#ifndef SRC_SPINE_FEATURE_PENDING_WRITE_REQUEST_H_
+#define SRC_SPINE_FEATURE_PENDING_WRITE_REQUEST_H_
 
-#include "src/spine/model/command_frame_types.h"
+#include "src/common/eebus_malloc.h"
+#include "src/spine/api/pending_write_request_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
 
-CmdType* CmdParse(const char* s);
-char* CmdPrintUnformatted(const CmdType* self);
+PendingWriteRequestObject* PendingWriteRequestCreate(const Message* msg);
+
+static inline void PendingWriteRequestDelete(PendingWriteRequestObject* pending_write_request) {
+  if (pending_write_request != NULL) {
+    PENDING_WRITE_REQUEST_DESTRUCT(pending_write_request);
+    EEBUS_FREE(pending_write_request);
+  }
+}
 
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
 
-#endif  // TESTS_SRC_SPINE_FUNCTION_CMD_TEST_DATA_H_
+#endif  // SRC_SPINE_FEATURE_PENDING_WRITE_REQUEST_H_

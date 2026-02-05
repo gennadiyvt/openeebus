@@ -62,6 +62,7 @@ set(SOURCES
   src/spine/feature/feature.c
   src/spine/feature/feature_functions.c
   src/spine/feature/operations.c
+  src/spine/feature/pending_write_request.c
   src/spine/feature_link/feature_link.c
   src/spine/feature_link/feature_link_container.c
   src/spine/function/function.c
@@ -212,6 +213,7 @@ set(HEADERS
   src/spine/api/operations_interface.h
   src/spine/api/sender_interface.h
   src/spine/api/subscription_manager_interface.h
+  src/spine/api/pending_write_request_interface.h
   src/spine/binding/binding_manager.h
   src/spine/device/device_local.h
   src/spine/device/device_remote.h
@@ -227,6 +229,7 @@ set(HEADERS
   src/spine/feature/feature.h
   src/spine/feature/feature_functions.h
   src/spine/feature/operations.h
+  src/spine/feature/pending_write_request.h
   src/spine/function/function.h
   src/spine/heartbeat/heartbeat_manager.h
   src/spine/model/actuator_level_types.h

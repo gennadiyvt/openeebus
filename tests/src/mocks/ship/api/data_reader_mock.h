@@ -18,8 +18,8 @@
  * @brief Data Reader Mock "class"
  */
 
-#ifndef TESTS_SRC_MOCKS_SHIP_SHIP_CONNECTION_DATA_READER_MOCK_H_
-#define TESTS_SRC_MOCKS_SHIP_SHIP_CONNECTION_DATA_READER_MOCK_H_
+#ifndef TESTS_SRC_MOCKS_SHIP_API_DATA_READER_MOCK_H_
+#define TESTS_SRC_MOCKS_SHIP_API_DATA_READER_MOCK_H_
 
 #include <gmock/gmock.h>
 
@@ -51,4 +51,4 @@ typedef struct DataReaderMock {
 
 DataReaderMock* DataReaderMockCreate(void);
 
-#endif  // TESTS_SRC_MOCKS_SHIP_SHIP_CONNECTION_DATA_READER_MOCK_H_
+#endif  // TESTS_SRC_MOCKS_SHIP_API_DATA_READER_MOCK_H_

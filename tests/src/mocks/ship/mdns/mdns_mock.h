@@ -18,8 +18,8 @@
  * @brief Mdns Mock "class"
  */
 
-#ifndef TESTS_EEBUS_SRC_SHIP_MDNS_MDNS_MOCK_H_
-#define TESTS_EEBUS_SRC_SHIP_MDNS_MDNS_MOCK_H_
+#ifndef TESTS_SRC_MOCKS_SHIP_MDNS_MDNS_MOCK_H_
+#define TESTS_SRC_MOCKS_SHIP_MDNS_MDNS_MOCK_H_
 
 #include <gmock/gmock.h>
 
@@ -59,4 +59,4 @@ typedef struct MdnsMock {
 
 MdnsMock* MdnsMockCreate(void);
 
-#endif  // TESTS_EEBUS_SRC_SHIP_MDNS_MDNS_MOCK_H_
+#endif  // TESTS_SRC_MOCKS_SHIP_MDNS_MDNS_MOCK_H_

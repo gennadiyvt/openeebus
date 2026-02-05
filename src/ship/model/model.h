@@ -59,6 +59,7 @@ typedef enum MsgValueType MsgValueType;
 #define SHIP_PROTOCOL_ID "ee1.0"
 #define SHIP_PROTOCOL_MAX_SUPPORTED_MAJOR_VERSION 1
 #define SHIP_PROTOCOL_MAX_SUPPORTED_MINOR_VERSION 0
+#define SKI_SIZE 40
 
 enum ConnectionHelloPhase {
   kConnectionHelloPhasePending = 0,  // "pending"

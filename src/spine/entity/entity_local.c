@@ -46,23 +46,31 @@ static void Destruct(EntityObject* self);
 static DeviceLocalObject* GetDevice(const EntityLocalObject* self);
 static HeartbeatManagerObject* GetHeartbeatManager(const EntityLocalObject* self);
 static void AddFeature(EntityLocalObject* self, FeatureLocalObject* feature);
-static FeatureLocalObject* GetFeatureWithTypeAndRole(
-    const EntityLocalObject* self, FeatureTypeType feature_type, RoleType role);
-static FeatureLocalObject* AddFeatureWithTypeAndRole(
-    EntityLocalObject* self, FeatureTypeType feature_type, RoleType role);
+static FeatureLocalObject*
+GetFeatureWithTypeAndRole(const EntityLocalObject* self, FeatureTypeType feature_type, RoleType role);
+static FeatureLocalObject*
+AddFeatureWithTypeAndRole(EntityLocalObject* self, FeatureTypeType feature_type, RoleType role);
 static FeatureLocalObject* GetFeatureWithId(const EntityLocalObject* self, const uint32_t* feature_id);
 static const Vector* GetFeatures(const EntityLocalObject* self);
-static void AddUseCaseSupport(EntityLocalObject* self, UseCaseActorType actor, UseCaseNameType use_case_name_id,
-    SpecificationVersionType version, const char* sub_revision, bool available,
-    const UseCaseScenarioSupportType* scenarios, size_t scenarios_size);
+static void AddUseCaseSupport(
+    EntityLocalObject* self,
+    UseCaseActorType actor,
+    UseCaseNameType use_case_name_id,
+    SpecificationVersionType version,
+    const char* sub_revision,
+    bool available,
+    const UseCaseScenarioSupportType* scenarios,
+    size_t scenarios_size
+);
 static bool HasUseCaseSupport(const EntityLocalObject* self, const UseCaseFilterType* use_case_filter);
 static void SetUseCaseAvailability(EntityLocalObject* self, const UseCaseFilterType* use_case_filter, bool available);
-static void RemoveUseCaseSupports(
-    EntityLocalObject* self, const UseCaseFilterType* use_case_filters, size_t use_case_filters_size);
+static void
+RemoveUseCaseSupports(EntityLocalObject* self, const UseCaseFilterType* use_case_filters, size_t use_case_filters_size);
 static void RemoveAllUseCaseSupports(EntityLocalObject* self);
 static void RemoveAllSubscriptions(EntityLocalObject* self);
 static void RemoveAllBindings(EntityLocalObject* self);
 static NodeManagementDetailedDiscoveryEntityInformationType* CreateInformation(const EntityLocalObject* self);
+static void Tick(EntityLocalObject* self);
 
 static const EntityLocalInterface entity_local_methods = {
     .entity_interface = {
@@ -89,13 +97,26 @@ static const EntityLocalInterface entity_local_methods = {
     .remove_all_subscriptions       = RemoveAllSubscriptions,
     .remove_all_bindings            = RemoveAllBindings,
     .create_information             = CreateInformation,
+    .tick                           = Tick,
 };
 
-static void EntityLocalConstruct(EntityLocal* self, DeviceLocalObject* device, EntityTypeType type,
-    const uint32_t* entity_id, size_t entity_id_size, uint32_t heartbeat_timeout);
+static void EntityLocalConstruct(
+    EntityLocal* self,
+    DeviceLocalObject* device,
+    EntityTypeType type,
+    const uint32_t* entity_id,
+    size_t entity_id_size,
+    uint32_t heartbeat_timeout
+);
 
-void EntityLocalConstruct(EntityLocal* self, DeviceLocalObject* device, EntityTypeType type, const uint32_t* entity_id,
-    size_t entity_id_size, uint32_t heartbeat_timeout) {
+void EntityLocalConstruct(
+    EntityLocal* self,
+    DeviceLocalObject* device,
+    EntityTypeType type,
+    const uint32_t* entity_id,
+    size_t entity_id_size,
+    uint32_t heartbeat_timeout
+) {
   EntityConstruct(ENTITY(self), type, DEVICE_GET_ADDRESS(DEVICE_OBJECT(device)), entity_id, entity_id_size);
   // Override "virtual functions table"
   ENTITY_LOCAL_INTERFACE(self) = &entity_local_methods;
@@ -111,8 +132,13 @@ void EntityLocalConstruct(EntityLocal* self, DeviceLocalObject* device, EntityTy
   }
 }
 
-EntityLocalObject* EntityLocalCreate(DeviceLocalObject* device, EntityTypeType type, const uint32_t* entity_id,
-    size_t entity_id_size, uint32_t heartbeat_timeout) {
+EntityLocalObject* EntityLocalCreate(
+    DeviceLocalObject* device,
+    EntityTypeType type,
+    const uint32_t* entity_id,
+    size_t entity_id_size,
+    uint32_t heartbeat_timeout
+) {
   EntityLocal* const entity_local = (EntityLocal*)EEBUS_MALLOC(sizeof(EntityLocal));
   if (entity_local == NULL) {
     return NULL;
@@ -139,7 +165,9 @@ void Destruct(EntityObject* self) {
   EntityDestruct(self);
 }
 
-DeviceLocalObject* GetDevice(const EntityLocalObject* self) { return ENTITY_LOCAL(self)->device; }
+DeviceLocalObject* GetDevice(const EntityLocalObject* self) {
+  return ENTITY_LOCAL(self)->device;
+}
 
 HeartbeatManagerObject* GetHeartbeatManager(const EntityLocalObject* self) {
   return ENTITY_LOCAL(self)->heartbeat_manager;
@@ -150,8 +178,8 @@ void AddFeature(EntityLocalObject* self, FeatureLocalObject* feature) {
   VectorPushBack(&enl->features, feature);
 }
 
-FeatureLocalObject* GetFeatureWithTypeAndRole(
-    const EntityLocalObject* self, FeatureTypeType feature_type, RoleType role) {
+FeatureLocalObject*
+GetFeatureWithTypeAndRole(const EntityLocalObject* self, FeatureTypeType feature_type, RoleType role) {
   const EntityLocal* const enl = ENTITY_LOCAL(self);
 
   for (size_t i = 0; i < VectorGetSize(&enl->features); ++i) {
@@ -205,11 +233,20 @@ FeatureLocalObject* GetFeatureWithId(const EntityLocalObject* self, const uint32
   return NULL;
 }
 
-const Vector* GetFeatures(const EntityLocalObject* self) { return &ENTITY_LOCAL(self)->features; }
+const Vector* GetFeatures(const EntityLocalObject* self) {
+  return &ENTITY_LOCAL(self)->features;
+}
 
-void AddUseCaseSupport(EntityLocalObject* self, UseCaseActorType actor, UseCaseNameType use_case_name_id,
-    SpecificationVersionType version, const char* sub_revision, bool available,
-    const UseCaseScenarioSupportType* scenarios, size_t scenarios_size) {
+void AddUseCaseSupport(
+    EntityLocalObject* self,
+    UseCaseActorType actor,
+    UseCaseNameType use_case_name_id,
+    SpecificationVersionType version,
+    const char* sub_revision,
+    bool available,
+    const UseCaseScenarioSupportType* scenarios,
+    size_t scenarios_size
+) {
   EntityLocal* const enl = ENTITY_LOCAL(self);
 
   NodeManagementObject* const nm = DEVICE_LOCAL_GET_NODE_MANAGEMENT(enl->device);
@@ -303,7 +340,10 @@ void SetUseCaseAvailability(EntityLocalObject* self, const UseCaseFilterType* us
 }
 
 void RemoveUseCaseSupports(
-    EntityLocalObject* self, const UseCaseFilterType* use_case_filters, size_t use_case_filters_size) {
+    EntityLocalObject* self,
+    const UseCaseFilterType* use_case_filters,
+    size_t use_case_filters_size
+) {
   EntityLocal* const enl = ENTITY_LOCAL(self);
 
   if ((use_case_filters == NULL) || (use_case_filters_size == 0)) {
@@ -379,4 +419,13 @@ NodeManagementDetailedDiscoveryEntityInformationType* CreateInformation(const En
   const EntityAddressType* entity_addr = ENTITY_GET_ADDRESS(entity);
   const EntityTypeType entity_type     = ENTITY_GET_TYPE(entity);
   return NodeManagementDetailedDiscoveryEntityInformationCreate(entity_addr, entity_type);
+}
+
+void Tick(EntityLocalObject* self) {
+  const Vector* features = ENTITY_LOCAL_GET_FEATURES(self);
+
+  for (size_t i = 0; i < VectorGetSize(features); ++i) {
+    FeatureLocalObject* const fl = (FeatureLocalObject*)VectorGetElement(features, i);
+    FEATURE_LOCAL_TICK(fl);
+  }
 }

@@ -35,6 +35,7 @@ extern "C" {
  * @{
  */
 const EebusDataCfg* ModelGetDatagramCfg(void);
+const EebusDataCfg* ModelGetHeaderCfg(void);
 const EebusDataCfg* ModelGetFeatureAddressCfg(void);
 const EebusDataCfg* ModelGetEntityAddressCfg(void);
 const EebusDataCfg* ModelGetFeatureAddressElementsCfg(void);
@@ -57,6 +58,7 @@ const EebusDataCfg* ModelGetUseCaseSupportElementDataCfg(void);
 
 void* ModelDataCreateEmpty(const EebusDataCfg* cfg);
 void* ModelDataCopy(const EebusDataCfg* cfg, const void* data);
+void ModelDataDelete(const EebusDataCfg* cfg, void* data);
 
 void* ModelFunctionDataCreateEmpty(FunctionType function_type);
 void ModelFunctionDataDelete(FunctionType function_type, void* data);

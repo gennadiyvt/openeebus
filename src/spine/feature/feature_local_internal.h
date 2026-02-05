@@ -41,6 +41,7 @@ struct FeatureLocal {
   Uint64Lut resp_msg_cbs;
   Vector result_cbs;
   Vector wr_approval_cbs;
+  Vector pending_write_requests;
 
   FeatureAddressContainer bindings;
   FeatureAddressContainer subscriptions;
@@ -49,7 +50,12 @@ struct FeatureLocal {
 #define FEATURE_LOCAL(obj) ((FeatureLocal*)(obj))
 
 void FeatureLocalConstruct(
-    FeatureLocal* self, uint32_t id, EntityLocalObject* entity, FeatureTypeType type, RoleType role);
+    FeatureLocal* self,
+    uint32_t id,
+    EntityLocalObject* entity,
+    FeatureTypeType type,
+    RoleType role
+);
 
 EebusError FeatureLocalProcessResult(FeatureLocal* self, const Message* msg);
 
@@ -59,10 +65,15 @@ EntityLocalObject* FeatureLocalGetEntity(const FeatureLocalObject* self);
 const void* FeatureLocalGetData(const FeatureLocalObject* self, FunctionType function_type);
 void FeatureLocalSetFunctionOperations(FeatureLocalObject* self, FunctionType type, bool read, bool write);
 EebusError FeatureLocalAddResponseCallback(
-    FeatureLocalObject* self, MsgCounterType msg_counter_ref, ResponseMessageCallback cb, void* ctx);
+    FeatureLocalObject* self,
+    MsgCounterType msg_counter_ref,
+    ResponseMessageCallback cb,
+    void* ctx
+);
 void FeatureLocalAddResultCallback(FeatureLocalObject* self, ResponseMessageCallback cb, void* ctx);
 EebusError FeatureLocalAddWriteApprovalCallback(FeatureLocalObject* self, WriteApprovalCallback cb, void* ctx);
-void FeatureLocalApproveOrDenyWrite(FeatureLocalObject* self, const Message* msg, const ErrorType* err);
+EebusError FeatureLocalTryApproveWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt);
+EebusError FeatureLocalDenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, EebusError err_num);
 void FeatureLocalCleanRemoteDeviceCaches(FeatureLocalObject* self, const DeviceAddressType* remote_addr);
 void* FeatureLocalDataCopy(const FeatureLocalObject* self, FunctionType function_type);
 EebusError FeatureLocalUpdateData(
@@ -73,8 +84,12 @@ EebusError FeatureLocalUpdateData(
     const FilterType* filter_delete
 );
 void FeatureLocalSetData(FeatureLocalObject* self, FunctionType function_type, void* data);
-EebusError FeatureLocalRequestRemoteData(FeatureLocalObject* self, FunctionType function_type,
-    const FilterType* filter_partial, FeatureRemoteObject* dest_feature);
+EebusError FeatureLocalRequestRemoteData(
+    FeatureLocalObject* self,
+    FunctionType function_type,
+    const FilterType* filter_partial,
+    FeatureRemoteObject* dest_feature
+);
 EebusError FeatureLocalRequestRemoteDataBySenderAddress(
     FeatureLocalObject* self,
     const CmdType* cmd,
@@ -92,6 +107,7 @@ EebusError FeatureLocalBindToRemote(FeatureLocalObject* self, const FeatureAddre
 EebusError FeatureLocalRemoveRemoteBinding(FeatureLocalObject* self, const FeatureAddressType* remote_addr);
 void FeatureLocalRemoveAllRemoteBindings(FeatureLocalObject* self);
 NodeManagementDetailedDiscoveryFeatureInformationType* FeatureLocalCreateInformation(const FeatureLocalObject* self);
+void FeatureLocalTick(FeatureLocalObject* self);
 
 #ifdef __cplusplus
 }

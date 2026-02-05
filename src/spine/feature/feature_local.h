@@ -16,8 +16,6 @@
 /**
  * @file
  * @brief Feature Local implementation declarations
- *
- * Transformed from spine-go/spine/feature_local.go
  */
 
 #ifndef SRC_SPINE_FEATURE_FEATURE_LOCAL_H_

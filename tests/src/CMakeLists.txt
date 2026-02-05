@@ -42,6 +42,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/spine/model/datagram_payload
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/spine/model/function_data
     ${EXECUTABLE_OUTPUT_PATH}/spine/model/function_data)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/spine/feature
+    ${EXECUTABLE_OUTPUT_PATH}/spine/feature)
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/spine/function
     ${EXECUTABLE_OUTPUT_PATH}/spine/function)
 

@@ -58,6 +58,7 @@ static void RemoveAllUseCaseSupports(EntityLocalObject* self);
 static void RemoveAllSubscriptions(EntityLocalObject* self);
 static void RemoveAllBindings(EntityLocalObject* self);
 static NodeManagementDetailedDiscoveryEntityInformationType* CreateInformation(const EntityLocalObject* self);
+static void Tick(EntityLocalObject* self);
 
 static const EntityLocalInterface entity_local_methods = {
     .entity_interface = {
@@ -84,6 +85,7 @@ static const EntityLocalInterface entity_local_methods = {
     .remove_all_subscriptions       = RemoveAllSubscriptions,
     .remove_all_bindings            = RemoveAllBindings,
     .create_information             = CreateInformation,
+    .tick                           = Tick,
 };
 
 static void EntityLocalMockConstruct(EntityLocalMock* self);
@@ -222,4 +224,9 @@ void RemoveAllBindings(EntityLocalObject* self) {
 NodeManagementDetailedDiscoveryEntityInformationType* CreateInformation(const EntityLocalObject* self) {
   EntityLocalMock* const mock = ENTITY_LOCAL_MOCK(self);
   return mock->gmock->CreateInformation(self);
+}
+
+void Tick(EntityLocalObject* self) {
+  EntityLocalMock* const mock = ENTITY_LOCAL_MOCK(self);
+  mock->gmock->Tick(self);
 }

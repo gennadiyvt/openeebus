@@ -18,8 +18,8 @@
  * @brief Service Reader Mock "class"
  */
 
-#ifndef TESTS_SRC_MOCKS_SERVICE_SERVICE_SERVICE_READER_MOCK_H_
-#define TESTS_SRC_MOCKS_SERVICE_SERVICE_SERVICE_READER_MOCK_H_
+#ifndef TESTS_SRC_MOCKS_SERVICE_API_SERVICE_READER_MOCK_H_
+#define TESTS_SRC_MOCKS_SERVICE_API_SERVICE_READER_MOCK_H_
 
 #include <gmock/gmock.h>
 
@@ -62,4 +62,4 @@ typedef struct ServiceReaderMock {
 
 ServiceReaderMock* ServiceReaderMockCreate(void);
 
-#endif  // TESTS_SRC_MOCKS_SERVICE_SERVICE_SERVICE_READER_MOCK_H_
+#endif  // TESTS_SRC_MOCKS_SERVICE_API_SERVICE_READER_MOCK_H_

@@ -109,4 +109,11 @@ typedef struct DeviceLocalMock {
 
 DeviceLocalMock* DeviceLocalMockCreate(void);
 
+static inline void DeviceLocalMockDelete(DeviceLocalMock* self) {
+  if (self != nullptr) {
+    DEVICE_DESTRUCT(DEVICE_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
+
 #endif  // TESTS_SRC_MOCKS_SPINE_DEVICE_DEVICE_LOCAL_MOCK_H_

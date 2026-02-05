@@ -18,8 +18,8 @@
  * @brief Filter Json print/parse functions for test purpose
  */
 
-#ifndef TESTS_SRC_SPINE_FUNCTION_FILTER_JSON_H_
-#define TESTS_SRC_SPINE_FUNCTION_FILTER_JSON_H_
+#ifndef TESTS_SRC_SPINE_FUNCTION_FILTER_TEST_DATA_H_
+#define TESTS_SRC_SPINE_FUNCTION_FILTER_TEST_DATA_H_
 
 #include <memory>
 #include <string_view>
@@ -31,4 +31,4 @@ char* FilterPrintUnformatted(const FilterType* self);
 void FilterDelete(FilterType* self);
 std::unique_ptr<FilterType, decltype(&FilterDelete)> FilterTestDataParse(const std::string_view& s);
 
-#endif  // TESTS_SRC_SPINE_FUNCTION_FILTER_JSON_H_
+#endif  // TESTS_SRC_SPINE_FUNCTION_FILTER_TEST_DATA_H_

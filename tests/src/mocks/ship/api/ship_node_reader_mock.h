@@ -18,8 +18,8 @@
  * @brief Ship Node Reader Mock "class"
  */
 
-#ifndef TESTS_SRC_MOCKS_SHIP_SHIP_NODE_SHIP_NODE_READER_MOCK_H_
-#define TESTS_SRC_MOCKS_SHIP_SHIP_NODE_SHIP_NODE_READER_MOCK_H_
+#ifndef TESTS_SRC_MOCKS_SHIP_API_SHIP_NODE_READER_MOCK_H_
+#define TESTS_SRC_MOCKS_SHIP_API_SHIP_NODE_READER_MOCK_H_
 
 #include <gmock/gmock.h>
 
@@ -65,4 +65,4 @@ typedef struct ShipNodeReaderMock {
 
 ShipNodeReaderMock* ShipNodeReaderMockCreate(void);
 
-#endif  // TESTS_SRC_MOCKS_SHIP_SHIP_NODE_SHIP_NODE_READER_MOCK_H_
+#endif  // TESTS_SRC_MOCKS_SHIP_API_SHIP_NODE_READER_MOCK_H_
