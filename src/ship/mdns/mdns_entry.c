@@ -138,6 +138,36 @@ void MdnsEntryDeallocator(void* p) {
   MdnsEntryDelete((MdnsEntry*)p);
 }
 
+MdnsEntry* MdnsEntryCopy(const MdnsEntry* src) {
+  if (src == NULL) {
+    return NULL;
+  }
+
+  MdnsEntry* new_entry = (MdnsEntry*)EEBUS_MALLOC(sizeof(MdnsEntry));
+  if (new_entry == NULL) {
+    return NULL;
+  }
+
+  // Service location fields
+  new_entry->name   = StringCopy(src->name);
+  new_entry->host   = StringCopy(src->host);
+  new_entry->domain = StringCopy(src->domain);
+  new_entry->port   = src->port;
+  new_entry->iface  = src->iface;
+
+  // SHIP TXT Record fields
+  new_entry->txtvers = StringCopy(src->txtvers);
+  new_entry->id      = StringCopy(src->id);
+  new_entry->path    = StringCopy(src->path);
+  new_entry->ski     = StringCopy(src->ski);
+  new_entry->reg     = StringCopy(src->reg);
+  new_entry->brand   = StringCopy(src->brand);
+  new_entry->type    = StringCopy(src->type);
+  new_entry->model   = StringCopy(src->model);
+
+  return new_entry;
+}
+
 EebusError MdnsEntrySetValue(
     MdnsEntry* entry, const char* key_ptr, size_t key_size, const char* value_ptr, size_t value_size) {
   if ((key_ptr == NULL) || (key_size == 0)) {

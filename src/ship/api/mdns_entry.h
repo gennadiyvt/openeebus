@@ -132,6 +132,13 @@ static inline void MdnsEntryDelete(MdnsEntry* entry) {
   }
 }
 
+/**
+ * @brief Creates a deep copy of the given MdnsEntry.
+ * @param src The source MdnsEntry to copy.
+ * @return A pointer to the newly created MdnsEntry copy, or NULL if memory allocation fails.
+ */
+MdnsEntry* MdnsEntryCopy(const MdnsEntry* src);
+
 void MdnsEntryDeallocator(void* p);
 
 EebusError MdnsEntrySetHost(MdnsEntry* entry, const char* host);
