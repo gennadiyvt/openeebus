@@ -280,6 +280,9 @@ ShipMdnsObject* ShipMdnsCreate(
     void* ctx
 ) {
   Mdns* const mdns = (Mdns*)EEBUS_MALLOC(sizeof(Mdns));
+  if (mdns == NULL) {
+    return NULL;
+  }
 
   MdnsConstruct(mdns, ski, device_info, service_name, port, cb, ctx);
 
