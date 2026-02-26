@@ -60,7 +60,7 @@ void ShipConnectionTestSuite::ExpectCloseWithError(const char* error_msg, bool h
 
 void ShipConnectionTestSuite::SetUp() {
   tls_cert_mock          = TlsCertificateMockCreate();
-  ifp_mock               = CreateInfoProviderMock();
+  ifp_mock               = InfoProviderMockCreate();
   websocket_creator_mock = WebsocketCreatorMockCreate();
 
   ShipConnectionConstruct(

@@ -23,7 +23,7 @@
 #include <gmock/gmock.h>
 
 #include "src/common/api/eebus_timer_interface.h"
-#include "src/common/eebus_malloc.h"
+#include "src/common/eebus_errors.h"
 #include "src/common/eebus_timer/eebus_timer.h"
 
 static void Destruct(EebusTimerObject* self);
@@ -40,19 +40,30 @@ static const EebusTimerInterface eebus_timer_methods = {
     .get_timer_state    = GetTimerState,
 };
 
-static void EebusTimerMockConstruct(EebusTimerMock* self);
+static EebusError EebusTimerMockConstruct(EebusTimerMock* self);
 
-void EebusTimerMockConstruct(EebusTimerMock* self) {
+EebusError EebusTimerMockConstruct(EebusTimerMock* self) {
   // Override "virtual functions table"
   EEBUS_TIMER_INTERFACE(self) = &eebus_timer_methods;
+
+  self->gmock = new EebusTimerGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 EebusTimerMock* EebusTimerMockCreate(void) {
   EebusTimerMock* const mock = (EebusTimerMock*)EEBUS_MALLOC(sizeof(EebusTimerMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  EebusTimerMockConstruct(mock);
-
-  mock->gmock = new EebusTimerGMock();
+  if (EebusTimerMockConstruct(mock) != kEebusErrorOk) {
+    EebusTimerMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

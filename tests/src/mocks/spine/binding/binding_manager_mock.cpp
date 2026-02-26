@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/binding_manager_interface.h"
 
 static void Destruct(BindingManagerObject* self);
@@ -53,19 +52,30 @@ static const BindingManagerInterface binding_manager_methods = {
     .create_binding_data    = CreateBindingData,
 };
 
-static void BindingManagerMockConstruct(BindingManagerMock* self);
+static EebusError BindingManagerMockConstruct(BindingManagerMock* self);
 
-void BindingManagerMockConstruct(BindingManagerMock* self) {
+EebusError BindingManagerMockConstruct(BindingManagerMock* self) {
   // Override "virtual functions table"
   BINDING_MANAGER_INTERFACE(self) = &binding_manager_methods;
+
+  self->gmock = new BindingManagerGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 BindingManagerMock* BindingManagerMockCreate(void) {
   BindingManagerMock* const mock = (BindingManagerMock*)EEBUS_MALLOC(sizeof(BindingManagerMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  BindingManagerMockConstruct(mock);
-
-  mock->gmock = new BindingManagerGMock();
+  if (BindingManagerMockConstruct(mock) != kEebusErrorOk) {
+    BindingManagerMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

@@ -86,12 +86,6 @@ static constexpr std::string_view spine_data_received =
       ]}
     ]})"sv;
 
-void DataReaderMockDelete(DataReaderMock* p) {
-  EXPECT_CALL(*p->gmock, Destruct(DATA_READER_OBJECT(p)));
-  DATA_READER_DESTRUCT(DATA_READER_OBJECT(p));
-  EEBUS_FREE(p);
-}
-
 TEST_F(ShipConnectionTestSuite, ShipConnectionDataExchangeReceiveSpineDataTest) {
   // Arrange:
   // Setup data reader

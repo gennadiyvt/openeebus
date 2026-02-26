@@ -22,7 +22,7 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
+#include "src/common/eebus_errors.h"
 #include "src/ship/api/websocket_creator_interface.h"
 #include "websocket_mock.h"
 
@@ -34,19 +34,30 @@ static const WebsocketCreatorInterface websocket_creator_methods = {
     .create_websocket = CreateWebsocket,
 };
 
-static void WebsocketCreatorMockConstruct(WebsocketCreatorMock* self);
+static EebusError WebsocketCreatorMockConstruct(WebsocketCreatorMock* self);
 
-void WebsocketCreatorMockConstruct(WebsocketCreatorMock* self) {
+EebusError WebsocketCreatorMockConstruct(WebsocketCreatorMock* self) {
   // Override "virtual functions table"
   WEBSOCKET_CREATOR_INTERFACE(self) = &websocket_creator_methods;
+
+  self->gmock = new WebsocketCreatorGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 WebsocketCreatorMock* WebsocketCreatorMockCreate(void) {
   WebsocketCreatorMock* const mock = (WebsocketCreatorMock*)EEBUS_MALLOC(sizeof(WebsocketCreatorMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  WebsocketCreatorMockConstruct(mock);
-
-  mock->gmock = new WebsocketCreatorGMock();
+  if (WebsocketCreatorMockConstruct(mock) != kEebusErrorOk) {
+    WebsocketCreatorMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

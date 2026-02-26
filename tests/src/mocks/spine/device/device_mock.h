@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/device_interface.h"
 
 class DeviceGMockInterface {
@@ -56,5 +57,12 @@ typedef struct DeviceMock {
 #define DEVICE_MOCK(obj) ((DeviceMock*)(obj))
 
 DeviceMock* DeviceMockCreate(void);
+
+static inline void DeviceMockDelete(DeviceMock* self) {
+  if (self != nullptr) {
+    DEVICE_DESTRUCT(DEVICE_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_DEVICE_DEVICE_MOCK_H_

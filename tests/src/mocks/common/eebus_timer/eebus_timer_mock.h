@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "src/common/api/eebus_timer_interface.h"
+#include "src/common/eebus_malloc.h"
 
 class EebusTimerGMockInterface {
  public:
@@ -56,5 +57,12 @@ typedef struct EebusTimerMock {
 #define EEBUS_TIMER_MOCK(obj) ((EebusTimerMock*)(obj))
 
 EebusTimerMock* EebusTimerMockCreate(void);
+
+static inline void EebusTimerMockDelete(EebusTimerMock* self) {
+  if (self != nullptr) {
+    EEBUS_TIMER_DESTRUCT(EEBUS_TIMER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_COMMON_EEBUS_TIMER_EEBUS_TIMER_MOCK_H_

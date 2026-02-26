@@ -26,7 +26,6 @@
 #include <memory>
 
 #include "entity_mock.h"
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/entity_local_interface.h"
 
 class EntityLocalGMockInterface : public EntityGMockInterface {

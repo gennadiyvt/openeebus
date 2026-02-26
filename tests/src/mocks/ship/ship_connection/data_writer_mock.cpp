@@ -22,7 +22,7 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
+#include "src/common/eebus_errors.h"
 #include "src/ship/api/data_writer_interface.h"
 
 static void Destruct(DataWriterObject* self);
@@ -33,19 +33,30 @@ static const DataWriterInterface data_writer_methods = {
     .write_message = WriteMessage,
 };
 
-static void DataWriterMockConstruct(DataWriterMock* self);
+static EebusError DataWriterMockConstruct(DataWriterMock* self);
 
-void DataWriterMockConstruct(DataWriterMock* self) {
+EebusError DataWriterMockConstruct(DataWriterMock* self) {
   // Override "virtual functions table"
   DATA_WRITER_INTERFACE(self) = &data_writer_methods;
+
+  self->gmock = new DataWriterGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 DataWriterMock* DataWriterMockCreate(void) {
   DataWriterMock* const mock = (DataWriterMock*)EEBUS_MALLOC(sizeof(DataWriterMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  DataWriterMockConstruct(mock);
-
-  mock->gmock = new DataWriterGMock();
+  if (DataWriterMockConstruct(mock) != kEebusErrorOk) {
+    DataWriterMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

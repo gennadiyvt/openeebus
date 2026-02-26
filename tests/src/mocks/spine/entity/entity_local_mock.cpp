@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/entity_local_interface.h"
 
 static void Destruct(EntityObject* self);
@@ -88,19 +87,30 @@ static const EntityLocalInterface entity_local_methods = {
     .tick                           = Tick,
 };
 
-static void EntityLocalMockConstruct(EntityLocalMock* self);
+static EebusError EntityLocalMockConstruct(EntityLocalMock* self);
 
-void EntityLocalMockConstruct(EntityLocalMock* self) {
+EebusError EntityLocalMockConstruct(EntityLocalMock* self) {
   // Override "virtual functions table"
   ENTITY_LOCAL_INTERFACE(self) = &entity_local_methods;
+
+  self->gmock = new EntityLocalGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 EntityLocalMock* EntityLocalMockCreate(void) {
   EntityLocalMock* const mock = (EntityLocalMock*)EEBUS_MALLOC(sizeof(EntityLocalMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  EntityLocalMockConstruct(mock);
-
-  mock->gmock = new EntityLocalGMock();
+  if (EntityLocalMockConstruct(mock) != kEebusErrorOk) {
+    EntityLocalMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

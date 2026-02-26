@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/operations_interface.h"
 
 class OperationsGMockInterface {
@@ -60,5 +61,12 @@ typedef struct OperationsMock {
 #define OPERATIONS_MOCK(obj) ((OperationsMock*)(obj))
 
 OperationsMock* OperationsMockCreate(void);
+
+static inline void OperationsMockDelete(OperationsMock* self) {
+  if (self != nullptr) {
+    OPERATIONS_DESTRUCT(OPERATIONS_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_FEATURE_OPERATIONS_MOCK_H_

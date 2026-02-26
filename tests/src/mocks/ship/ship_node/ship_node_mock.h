@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "mocks/ship/api/info_provider_mock.h"
+#include "src/common/eebus_malloc.h"
 #include "src/ship/api/ship_node_interface.h"
 
 class ShipNodeGMockInterface : public InfoProviderMock {
@@ -67,5 +68,12 @@ typedef struct ShipNodeMock {
 #define SHIP_NODE_MOCK(obj) ((ShipNodeMock*)(obj))
 
 ShipNodeMock* ShipNodeMockCreate(void);
+
+static inline void ShipNodeMockDelete(ShipNodeMock* self) {
+  if (self != nullptr) {
+    INFO_PROVIDER_DESTRUCT(INFO_PROVIDER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SHIP_SHIP_NODE_SHIP_NODE_MOCK_H_

@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/ship/api/http_server_interface.h"
 
 class HttpServerGMockInterface {
@@ -52,5 +53,12 @@ typedef struct HttpServerMock {
 #define HTTP_SERVER_MOCK(obj) ((HttpServerMock*)(obj))
 
 HttpServerMock* HttpServerMockCreate(void);
+
+static inline void HttpServerMockDelete(HttpServerMock* self) {
+  if (self != nullptr) {
+    HTTP_SERVER_DESTRUCT(HTTP_SERVER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SHIP_WEBSOCKET_HTTP_SERVER_MOCK_H_

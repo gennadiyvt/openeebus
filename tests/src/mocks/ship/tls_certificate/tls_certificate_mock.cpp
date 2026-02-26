@@ -22,7 +22,7 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
+#include "src/common/eebus_errors.h"
 #include "src/ship/api/tls_certificate_interface.h"
 
 static void Destruct(TlsCertificateObject* self);
@@ -41,19 +41,30 @@ static const TlsCertificateInterface tls_certificate_methods = {
     .get_private_key_size = GetPrivateKeySize,
 };
 
-static void TlsCertificateMockConstruct(TlsCertificateMock* self);
+static EebusError TlsCertificateMockConstruct(TlsCertificateMock* self);
 
-void TlsCertificateMockConstruct(TlsCertificateMock* self) {
+EebusError TlsCertificateMockConstruct(TlsCertificateMock* self) {
   // Override "virtual functions table"
   TLS_CERTIFICATE_INTERFACE(self) = &tls_certificate_methods;
+
+  self->gmock = new TlsCertificateGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 TlsCertificateMock* TlsCertificateMockCreate(void) {
   TlsCertificateMock* const mock = (TlsCertificateMock*)EEBUS_MALLOC(sizeof(TlsCertificateMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  TlsCertificateMockConstruct(mock);
-
-  mock->gmock = new TlsCertificateGMock();
+  if (TlsCertificateMockConstruct(mock) != kEebusErrorOk) {
+    TlsCertificateMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

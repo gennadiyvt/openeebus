@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/feature_interface.h"
 
 static void Destruct(FeatureObject* self);
@@ -45,19 +44,30 @@ static const FeatureInterface feature_methods = {
     .to_string               = ToString,
 };
 
-static void FeatureMockConstruct(FeatureMock* self);
+static EebusError FeatureMockConstruct(FeatureMock* self);
 
-void FeatureMockConstruct(FeatureMock* self) {
+EebusError FeatureMockConstruct(FeatureMock* self) {
   // Override "virtual functions table"
   FEATURE_INTERFACE(self) = &feature_methods;
+
+  self->gmock = new FeatureGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 FeatureMock* FeatureMockCreate(void) {
   FeatureMock* const mock = (FeatureMock*)EEBUS_MALLOC(sizeof(FeatureMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  FeatureMockConstruct(mock);
-
-  mock->gmock = new FeatureGMock();
+  if (FeatureMockConstruct(mock) != kEebusErrorOk) {
+    FeatureMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

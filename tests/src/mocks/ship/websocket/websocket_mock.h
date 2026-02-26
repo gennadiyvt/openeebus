@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/ship/api/websocket_interface.h"
 
 class WebsocketGMockInterface {
@@ -58,5 +59,12 @@ typedef struct WebsocketMock {
 #define WEBSOCKET_MOCK(obj) ((WebsocketMock*)(obj))
 
 WebsocketMock* WebsocketMockCreate(void);
+
+static inline void WebsocketMockDelete(WebsocketMock* self) {
+  if (self != nullptr) {
+    WEBSOCKET_DESTRUCT(WEBSOCKET_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SHIP_WEBSOCKET_WEBSOCKET_MOCK_H_

@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/ship/api/mdns_interface.h"
 
 class MdnsGMockInterface {
@@ -58,5 +59,12 @@ typedef struct MdnsMock {
 #define MDNS_MOCK(obj) ((MdnsMock*)(obj))
 
 MdnsMock* MdnsMockCreate(void);
+
+static inline void MdnsMockDelete(MdnsMock* self) {
+  if (self != nullptr) {
+    MDNS_DESTRUCT(MDNS_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SHIP_MDNS_MDNS_MOCK_H_

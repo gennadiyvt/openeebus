@@ -26,7 +26,6 @@
 #include <memory>
 
 #include "feature_mock.h"
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/feature_remote_interface.h"
 
 class FeatureRemoteGMockInterface : public FeatureGMockInterface {

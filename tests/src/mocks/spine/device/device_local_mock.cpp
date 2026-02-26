@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/device_local_interface.h"
 
 static void Destruct(DeviceObject* self);
@@ -90,19 +89,30 @@ static const DeviceLocalInterface device_local_methods = {
     .unlock                                 = Unlock,
 };
 
-static void DeviceLocalMockConstruct(DeviceLocalMock* self);
+static EebusError DeviceLocalMockConstruct(DeviceLocalMock* self);
 
-void DeviceLocalMockConstruct(DeviceLocalMock* self) {
+EebusError DeviceLocalMockConstruct(DeviceLocalMock* self) {
   // Override "virtual functions table"
   DEVICE_LOCAL_INTERFACE(self) = &device_local_methods;
+
+  self->gmock = new DeviceLocalGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 DeviceLocalMock* DeviceLocalMockCreate(void) {
   DeviceLocalMock* const mock = (DeviceLocalMock*)EEBUS_MALLOC(sizeof(DeviceLocalMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  DeviceLocalMockConstruct(mock);
-
-  mock->gmock = new DeviceLocalGMock();
+  if (DeviceLocalMockConstruct(mock) != kEebusErrorOk) {
+    DeviceLocalMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

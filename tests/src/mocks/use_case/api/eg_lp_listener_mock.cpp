@@ -7,7 +7,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/use_case/api/eg_lp_listener_interface.h"
 
 static void Destruct(EgLpListenerObject* self);

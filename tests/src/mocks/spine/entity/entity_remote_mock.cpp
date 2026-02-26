@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/entity_remote_interface.h"
 
 static void Destruct(EntityObject* self);
@@ -61,19 +60,30 @@ static const EntityRemoteInterface entity_remote_methods = {
     .has_use_case_support           = HasUseCaseSupport,
 };
 
-static void EntityRemoteMockConstruct(EntityRemoteMock* self);
+static EebusError EntityRemoteMockConstruct(EntityRemoteMock* self);
 
-void EntityRemoteMockConstruct(EntityRemoteMock* self) {
+EebusError EntityRemoteMockConstruct(EntityRemoteMock* self) {
   // Override "virtual functions table"
   ENTITY_REMOTE_INTERFACE(self) = &entity_remote_methods;
+
+  self->gmock = new EntityRemoteGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 EntityRemoteMock* EntityRemoteMockCreate(void) {
   EntityRemoteMock* const mock = (EntityRemoteMock*)EEBUS_MALLOC(sizeof(EntityRemoteMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  EntityRemoteMockConstruct(mock);
-
-  mock->gmock = new EntityRemoteGMock();
+  if (EntityRemoteMockConstruct(mock) != kEebusErrorOk) {
+    EntityRemoteMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

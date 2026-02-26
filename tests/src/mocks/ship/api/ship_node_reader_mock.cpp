@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/ship/api/ship_node_reader_interface.h"
 
 static void Destruct(ShipNodeReaderObject* self);
@@ -45,19 +44,30 @@ static const ShipNodeReaderInterface ship_node_reader_methods = {
     .is_waiting_for_trust_allowed = IsWaitingForTrustAllowed,
 };
 
-static void ShipNodeReaderMockConstruct(ShipNodeReaderMock* self);
+static EebusError ShipNodeReaderMockConstruct(ShipNodeReaderMock* self);
 
-void ShipNodeReaderMockConstruct(ShipNodeReaderMock* self) {
+EebusError ShipNodeReaderMockConstruct(ShipNodeReaderMock* self) {
   // Override "virtual functions table"
   SHIP_NODE_READER_INTERFACE(self) = &ship_node_reader_methods;
+
+  self->gmock = new ShipNodeReaderGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 ShipNodeReaderMock* ShipNodeReaderMockCreate(void) {
   ShipNodeReaderMock* const mock = (ShipNodeReaderMock*)EEBUS_MALLOC(sizeof(ShipNodeReaderMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  ShipNodeReaderMockConstruct(mock);
-
-  mock->gmock = new ShipNodeReaderGMock();
+  if (ShipNodeReaderMockConstruct(mock) != kEebusErrorOk) {
+    ShipNodeReaderMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

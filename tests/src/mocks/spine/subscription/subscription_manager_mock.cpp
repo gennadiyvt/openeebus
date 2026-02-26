@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/subscription_manager_interface.h"
 
 static void Destruct(SubscriptionManagerObject* self);
@@ -52,19 +51,30 @@ static const SubscriptionManagerInterface subscription_manager_methods = {
     .create_subscription_data    = CreateSubscriptionData,
 };
 
-static void SubscriptionManagerMockConstruct(SubscriptionManagerMock* self);
+static EebusError SubscriptionManagerMockConstruct(SubscriptionManagerMock* self);
 
-void SubscriptionManagerMockConstruct(SubscriptionManagerMock* self) {
+EebusError SubscriptionManagerMockConstruct(SubscriptionManagerMock* self) {
   // Override "virtual functions table"
   SUBSCRIPTION_MANAGER_INTERFACE(self) = &subscription_manager_methods;
+
+  self->gmock = new SubscriptionManagerGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 SubscriptionManagerMock* SubscriptionManagerMockCreate(void) {
   SubscriptionManagerMock* const mock = (SubscriptionManagerMock*)EEBUS_MALLOC(sizeof(SubscriptionManagerMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  SubscriptionManagerMockConstruct(mock);
-
-  mock->gmock = new SubscriptionManagerGMock();
+  if (SubscriptionManagerMockConstruct(mock) != kEebusErrorOk) {
+    SubscriptionManagerMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

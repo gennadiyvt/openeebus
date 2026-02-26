@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/sender_interface.h"
 
 static void Destruct(SenderObject* self);
@@ -85,19 +84,30 @@ static const SenderInterface sender_methods = {
     .result_error     = ResultError,
 };
 
-static void SenderMockConstruct(SenderMock* self);
+static EebusError SenderMockConstruct(SenderMock* self);
 
-void SenderMockConstruct(SenderMock* self) {
+EebusError SenderMockConstruct(SenderMock* self) {
   // Override "virtual functions table"
   SENDER_INTERFACE(self) = &sender_methods;
+
+  self->gmock = new SenderGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 SenderMock* SenderMockCreate(void) {
   SenderMock* const mock = (SenderMock*)EEBUS_MALLOC(sizeof(SenderMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  SenderMockConstruct(mock);
-
-  mock->gmock = new SenderGMock();
+  if (SenderMockConstruct(mock) != kEebusErrorOk) {
+    SenderMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

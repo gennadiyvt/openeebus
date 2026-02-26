@@ -21,7 +21,7 @@
 #include "pending_write_request_mock.h"
 
 #include <gmock/gmock.h>
-#include "src/common/eebus_malloc.h"
+
 #include "src/spine/api/pending_write_request_interface.h"
 
 static void Destruct(PendingWriteRequestObject* self);
@@ -46,19 +46,30 @@ static const PendingWriteRequestInterface pending_write_request_methods = {
     .has_expired             = HasExpired,
 };
 
-static void PendingWriteRequestMockConstruct(PendingWriteRequestMock* self);
+static EebusError PendingWriteRequestMockConstruct(PendingWriteRequestMock* self);
 
-void PendingWriteRequestMockConstruct(PendingWriteRequestMock* self) {
+EebusError PendingWriteRequestMockConstruct(PendingWriteRequestMock* self) {
   // Override "virtual functions table"
   PENDING_WRITE_REQUEST_INTERFACE(self) = &pending_write_request_methods;
+
+  self->gmock = new PendingWriteRequestGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 PendingWriteRequestMock* PendingWriteRequestMockCreate(void) {
   PendingWriteRequestMock* const mock = (PendingWriteRequestMock*)EEBUS_MALLOC(sizeof(PendingWriteRequestMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  PendingWriteRequestMockConstruct(mock);
-
-  mock->gmock = new PendingWriteRequestGMock();
+  if (PendingWriteRequestMockConstruct(mock) != kEebusErrorOk) {
+    PendingWriteRequestMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

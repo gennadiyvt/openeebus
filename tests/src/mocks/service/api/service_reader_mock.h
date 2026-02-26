@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/service/api/service_reader_interface.h"
 
 class ServiceReaderGMockInterface {
@@ -61,5 +62,12 @@ typedef struct ServiceReaderMock {
 #define SERVICE_READER_MOCK(obj) ((ServiceReaderMock*)(obj))
 
 ServiceReaderMock* ServiceReaderMockCreate(void);
+
+static inline void ServiceReaderMockDelete(ServiceReaderMock* self) {
+  if (self != nullptr) {
+    SERVICE_READER_DESTRUCT(SERVICE_READER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SERVICE_API_SERVICE_READER_MOCK_H_

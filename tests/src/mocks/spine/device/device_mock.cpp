@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/device_interface.h"
 
 static void Destruct(DeviceObject* self);
@@ -39,19 +38,30 @@ static const DeviceInterface device_methods = {
     .create_destination_data = CreateDestinationData,
 };
 
-static void DeviceMockConstruct(DeviceMock* self);
+static EebusError DeviceMockConstruct(DeviceMock* self);
 
-void DeviceMockConstruct(DeviceMock* self) {
+EebusError DeviceMockConstruct(DeviceMock* self) {
   // Override "virtual functions table"
   DEVICE_INTERFACE(self) = &device_methods;
+
+  self->gmock = new DeviceGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 DeviceMock* DeviceMockCreate(void) {
   DeviceMock* const mock = (DeviceMock*)EEBUS_MALLOC(sizeof(DeviceMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  DeviceMockConstruct(mock);
-
-  mock->gmock = new DeviceGMock();
+  if (DeviceMockConstruct(mock) != kEebusErrorOk) {
+    DeviceMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

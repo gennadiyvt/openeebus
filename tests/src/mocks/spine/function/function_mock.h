@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/function_interface.h"
 
 class FunctionGMockInterface {
@@ -85,5 +86,12 @@ typedef struct FunctionMock {
 #define FUNCTION_MOCK(obj) ((FunctionMock*)(obj))
 
 FunctionMock* FunctionMockCreate(void);
+
+static inline void FunctionMockDelete(FunctionMock* self) {
+  if (self != nullptr) {
+    FUNCTION_DESTRUCT(FUNCTION_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_FUNCTION_FUNCTION_MOCK_H_

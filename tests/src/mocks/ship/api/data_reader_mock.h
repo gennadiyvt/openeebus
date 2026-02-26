@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/ship/api/data_reader_interface.h"
 
 class DataReaderGMockInterface {
@@ -50,5 +51,12 @@ typedef struct DataReaderMock {
 #define DATA_READER_MOCK(obj) ((DataReaderMock*)(obj))
 
 DataReaderMock* DataReaderMockCreate(void);
+
+static inline void DataReaderMockDelete(DataReaderMock* self) {
+  if (self != nullptr) {
+    DATA_READER_DESTRUCT(DATA_READER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SHIP_API_DATA_READER_MOCK_H_

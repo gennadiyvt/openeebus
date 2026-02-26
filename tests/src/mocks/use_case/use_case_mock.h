@@ -58,4 +58,11 @@ typedef struct UseCaseMock {
 
 UseCaseMock* UseCaseMockCreate(void);
 
+static inline void UseCaseMockDelete(UseCaseMock* self) {
+  if (self != nullptr) {
+    USE_CASE_DESTRUCT(USE_CASE_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
+
 #endif  // TESTS_SRC_MOCKS_USE_CASE_USE_CASE_MOCK_H_

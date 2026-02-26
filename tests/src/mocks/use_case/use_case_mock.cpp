@@ -22,7 +22,7 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
+#include "src/common/eebus_errors.h"
 #include "src/use_case/api/use_case_interface.h"
 
 static void Destruct(UseCaseObject* self);
@@ -38,19 +38,30 @@ static const UseCaseInterface use_case_methods = {
     .get_remote_entity_with_address = GetRemoteEntityWithAddress,
 };
 
-static void UseCaseMockConstruct(UseCaseMock* self);
+static EebusError UseCaseMockConstruct(UseCaseMock* self);
 
-void UseCaseMockConstruct(UseCaseMock* self) {
+EebusError UseCaseMockConstruct(UseCaseMock* self) {
   // Override "virtual functions table"
   USE_CASE_INTERFACE(self) = &use_case_methods;
+
+  self->gmock = new UseCaseGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 UseCaseMock* UseCaseMockCreate(void) {
   UseCaseMock* const mock = (UseCaseMock*)EEBUS_MALLOC(sizeof(UseCaseMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  UseCaseMockConstruct(mock);
-
-  mock->gmock = new UseCaseGMock();
+  if (UseCaseMockConstruct(mock) != kEebusErrorOk) {
+    UseCaseMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

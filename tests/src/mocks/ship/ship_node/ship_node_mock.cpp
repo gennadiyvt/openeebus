@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/ship/api/ship_node_interface.h"
 
 void Destruct(InfoProviderObject* self);
@@ -56,19 +55,30 @@ static const ShipNodeInterface ship_node_methods = {
     .cancel_pairing_with_ski = CancelPairingWithSki,
 };
 
-static void ShipNodeMockConstruct(ShipNodeMock* self);
+static EebusError ShipNodeMockConstruct(ShipNodeMock* self);
 
-void ShipNodeMockConstruct(ShipNodeMock* self) {
+EebusError ShipNodeMockConstruct(ShipNodeMock* self) {
   // Override "virtual functions table"
   SHIP_NODE_INTERFACE(self) = &ship_node_methods;
+
+  self->gmock = new ShipNodeGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 ShipNodeMock* ShipNodeMockCreate(void) {
   ShipNodeMock* const mock = (ShipNodeMock*)EEBUS_MALLOC(sizeof(ShipNodeMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  ShipNodeMockConstruct(mock);
-
-  mock->gmock = new ShipNodeGMock();
+  if (ShipNodeMockConstruct(mock) != kEebusErrorOk) {
+    ShipNodeMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

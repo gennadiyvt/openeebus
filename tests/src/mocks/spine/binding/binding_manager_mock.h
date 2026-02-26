@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/binding_manager_interface.h"
 
 class BindingManagerGMockInterface {
@@ -84,5 +85,12 @@ typedef struct BindingManagerMock {
 #define BINDING_MANAGER_MOCK(obj) ((BindingManagerMock*)(obj))
 
 BindingManagerMock* BindingManagerMockCreate(void);
+
+static inline void BindingManagerMockDelete(BindingManagerMock* self) {
+  if (self != nullptr) {
+    BINDING_MANAGER_DESTRUCT(BINDING_MANAGER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_BINDING_BINDING_MANAGER_MOCK_H_

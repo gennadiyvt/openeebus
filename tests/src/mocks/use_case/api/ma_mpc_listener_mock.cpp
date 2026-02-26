@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/use_case/api/ma_mpc_listener_interface.h"
 
 static void Destruct(MaMpcListenerObject* self);
@@ -42,19 +41,30 @@ static const MaMpcListenerInterface ma_mpc_listener_methods = {
     .on_measurement_receive      = OnMeasurementReceive,
 };
 
-static void MaMpcListenerMockConstruct(MaMpcListenerMock* self);
+static EebusError MaMpcListenerMockConstruct(MaMpcListenerMock* self);
 
-void MaMpcListenerMockConstruct(MaMpcListenerMock* self) {
+EebusError MaMpcListenerMockConstruct(MaMpcListenerMock* self) {
   // Override "virtual functions table"
   MA_MPC_LISTENER_INTERFACE(self) = &ma_mpc_listener_methods;
+
+  self->gmock = new MaMpcListenerGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 MaMpcListenerMock* MaMpcListenerMockCreate(void) {
   MaMpcListenerMock* const mock = (MaMpcListenerMock*)EEBUS_MALLOC(sizeof(MaMpcListenerMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  MaMpcListenerMockConstruct(mock);
-
-  mock->gmock = new MaMpcListenerGMock();
+  if (MaMpcListenerMockConstruct(mock) != kEebusErrorOk) {
+    MaMpcListenerMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

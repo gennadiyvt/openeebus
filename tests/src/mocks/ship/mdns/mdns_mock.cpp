@@ -22,7 +22,7 @@
 
 #include <gmock/gmock.h>
 
-#include "src/ship/api/mdns_interface.h"
+#include "src/ship/api/ship_mdns_interface.h"
 
 static void Destruct(ShipMdnsObject* self);
 static EebusError Start(ShipMdnsObject* self);
@@ -40,19 +40,30 @@ static const ShipMdnsInterface mdns_methods = {
     .set_autoaccept     = SetAutoaccept,
 };
 
-static void MdnsMockConstruct(MdnsMock* self);
+static EebusError MdnsMockConstruct(MdnsMock* self);
 
-void MdnsMockConstruct(MdnsMock* self) {
+EebusError MdnsMockConstruct(MdnsMock* self) {
   // Override "virtual functions table"
   MDNS_INTERFACE(self) = &mdns_methods;
+
+  self->gmock = new MdnsGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 MdnsMock* MdnsMockCreate(void) {
   MdnsMock* const mock = (MdnsMock*)EEBUS_MALLOC(sizeof(MdnsMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  MdnsMockConstruct(mock);
-
-  mock->gmock = new MdnsGMock();
+  if (MdnsMockConstruct(mock) != kEebusErrorOk) {
+    MdnsMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

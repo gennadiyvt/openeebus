@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/ship/api/ship_node_reader_interface.h"
 
 class ShipNodeReaderGMockInterface {
@@ -64,5 +65,12 @@ typedef struct ShipNodeReaderMock {
 #define SHIP_NODE_READER_MOCK(obj) ((ShipNodeReaderMock*)(obj))
 
 ShipNodeReaderMock* ShipNodeReaderMockCreate(void);
+
+static inline void ShipNodeReaderMockDelete(ShipNodeReaderMock* self) {
+  if (self != nullptr) {
+    SHIP_NODE_READER_DESTRUCT(SHIP_NODE_READER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SHIP_API_SHIP_NODE_READER_MOCK_H_

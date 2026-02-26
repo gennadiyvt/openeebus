@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/device_remote_interface.h"
 
 static void Destruct(DeviceObject* self);
@@ -86,19 +85,30 @@ static const DeviceRemoteInterface device_remote_methods = {
     .check_entity_information       = CheckEntityInformation,
 };
 
-static void DeviceRemoteMockConstruct(DeviceRemoteMock* self);
+static EebusError DeviceRemoteMockConstruct(DeviceRemoteMock* self);
 
-void DeviceRemoteMockConstruct(DeviceRemoteMock* self) {
+EebusError DeviceRemoteMockConstruct(DeviceRemoteMock* self) {
   // Override "virtual functions table"
   DEVICE_REMOTE_INTERFACE(self) = &device_remote_methods;
+
+  self->gmock = new DeviceRemoteGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 DeviceRemoteMock* DeviceRemoteMockCreate(void) {
   DeviceRemoteMock* const mock = (DeviceRemoteMock*)EEBUS_MALLOC(sizeof(DeviceRemoteMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  DeviceRemoteMockConstruct(mock);
-
-  mock->gmock = new DeviceRemoteGMock();
+  if (DeviceRemoteMockConstruct(mock) != kEebusErrorOk) {
+    DeviceRemoteMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

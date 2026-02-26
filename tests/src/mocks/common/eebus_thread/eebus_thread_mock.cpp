@@ -23,7 +23,7 @@
 #include <gmock/gmock.h>
 
 #include "src/common/api/eebus_thread_interface.h"
-#include "src/common/eebus_malloc.h"
+#include "src/common/eebus_errors.h"
 
 static void Destruct(EebusThreadObject* self);
 static void Join(EebusThreadObject* self);
@@ -33,19 +33,30 @@ static const EebusThreadInterface eebus_thread_methods = {
     .join     = Join,
 };
 
-static void EebusThreadMockConstruct(EebusThreadMock* self);
+static EebusError EebusThreadMockConstruct(EebusThreadMock* self);
 
-void EebusThreadMockConstruct(EebusThreadMock* self) {
+EebusError EebusThreadMockConstruct(EebusThreadMock* self) {
   // Override "virtual functions table"
   EEBUS_THREAD_INTERFACE(self) = &eebus_thread_methods;
+
+  self->gmock = new EebusThreadGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 EebusThreadMock* EebusThreadMockCreate(void) {
   EebusThreadMock* const mock = (EebusThreadMock*)EEBUS_MALLOC(sizeof(EebusThreadMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  EebusThreadMockConstruct(mock);
-
-  mock->gmock = new EebusThreadGMock();
+  if (EebusThreadMockConstruct(mock) != kEebusErrorOk) {
+    EebusThreadMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

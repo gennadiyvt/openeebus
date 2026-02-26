@@ -16,11 +16,9 @@
 #include "info_provider_mock.h"
 
 #include <gmock/gmock.h>
-#include <stddef.h>
 
 #include <memory>
 
-#include "src/common/eebus_malloc.h"
 #include "src/ship/api/info_provider_interface.h"
 
 void Destruct(InfoProviderObject* self);
@@ -41,13 +39,30 @@ static const InfoProviderInterface info_provider_mock_methods = {
     .setup_remote_device              = SetupRemoteDevice,
 };
 
-InfoProviderMock* CreateInfoProviderMock(void) {
-  InfoProviderMock* const mock = (InfoProviderMock*)EEBUS_MALLOC(sizeof(InfoProviderMock));
+static EebusError InfoProviderMockConstruct(InfoProviderMock* self);
 
+EebusError InfoProviderMockConstruct(InfoProviderMock* self) {
   // Override "virtual functions table"
-  INFO_PROVIDER_INTERFACE(mock) = &info_provider_mock_methods;
+  INFO_PROVIDER_INTERFACE(self) = &info_provider_mock_methods;
 
-  mock->gmock = new InfoProviderGMock();
+  self->gmock = new InfoProviderGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
+}
+
+InfoProviderMock* InfoProviderMockCreate(void) {
+  InfoProviderMock* const mock = (InfoProviderMock*)EEBUS_MALLOC(sizeof(InfoProviderMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
+
+  if (InfoProviderMockConstruct(mock) != kEebusErrorOk) {
+    InfoProviderMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/ship/api/info_provider_interface.h"
 
 class InfoProviderMockInterface {
@@ -63,6 +64,13 @@ typedef struct InfoProviderMock {
 
 #define INFO_PROVIDER_MOCK(obj) ((InfoProviderMock*)(obj))
 
-InfoProviderMock* CreateInfoProviderMock(void);
+InfoProviderMock* InfoProviderMockCreate(void);
+
+static inline void InfoProviderMockDelete(InfoProviderMock* self) {
+  if (self != nullptr) {
+    INFO_PROVIDER_DESTRUCT(INFO_PROVIDER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SHIP_API_INFO_PROVIDER_MOCK_H_

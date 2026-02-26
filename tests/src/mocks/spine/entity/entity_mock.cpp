@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/entity_interface.h"
 
 static void Destruct(EntityObject* self);
@@ -41,19 +40,30 @@ static const EntityInterface entity_methods = {
     .get_next_feature_id = GetNextFeatureId,
 };
 
-static void EntityMockConstruct(EntityMock* self);
+static EebusError EntityMockConstruct(EntityMock* self);
 
-void EntityMockConstruct(EntityMock* self) {
+EebusError EntityMockConstruct(EntityMock* self) {
   // Override "virtual functions table"
   ENTITY_INTERFACE(self) = &entity_methods;
+
+  self->gmock = new EntityGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 EntityMock* EntityMockCreate(void) {
   EntityMock* const mock = (EntityMock*)EEBUS_MALLOC(sizeof(EntityMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  EntityMockConstruct(mock);
-
-  mock->gmock = EntityGMock();
+  if (EntityMockConstruct(mock) != kEebusErrorOk) {
+    EntityMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

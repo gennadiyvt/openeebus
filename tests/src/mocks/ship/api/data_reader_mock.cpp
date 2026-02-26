@@ -22,7 +22,7 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
+#include "src/common/eebus_errors.h"
 #include "src/ship/api/data_reader_interface.h"
 
 static void Destruct(DataReaderObject* self);
@@ -33,19 +33,30 @@ static const DataReaderInterface data_reader_methods = {
     .handle_message = HandleMessage,
 };
 
-static void DataReaderMockConstruct(DataReaderMock* self);
+static EebusError DataReaderMockConstruct(DataReaderMock* self);
 
-void DataReaderMockConstruct(DataReaderMock* self) {
+EebusError DataReaderMockConstruct(DataReaderMock* self) {
   // Override "virtual functions table"
   DATA_READER_INTERFACE(self) = &data_reader_methods;
+
+  self->gmock = new DataReaderGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 DataReaderMock* DataReaderMockCreate(void) {
   DataReaderMock* const mock = (DataReaderMock*)EEBUS_MALLOC(sizeof(DataReaderMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  DataReaderMockConstruct(mock);
-
-  mock->gmock = new DataReaderGMock();
+  if (DataReaderMockConstruct(mock) != kEebusErrorOk) {
+    DataReaderMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

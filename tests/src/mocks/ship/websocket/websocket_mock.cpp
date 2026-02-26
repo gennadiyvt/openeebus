@@ -22,7 +22,7 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
+#include "src/common/eebus_errors.h"
 #include "src/ship/api/websocket_interface.h"
 
 static void Destruct(WebsocketObject* self);
@@ -41,19 +41,30 @@ static const WebsocketInterface websocket_methods = {
     .schedule_write  = ScheduleWrite,
 };
 
-static void WebsocketMockConstruct(WebsocketMock* self);
+static EebusError WebsocketMockConstruct(WebsocketMock* self);
 
-void WebsocketMockConstruct(WebsocketMock* self) {
+EebusError WebsocketMockConstruct(WebsocketMock* self) {
   // Override "virtual functions table"
   WEBSOCKET_INTERFACE(self) = &websocket_methods;
+
+  self->gmock = new WebsocketGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 WebsocketMock* WebsocketMockCreate(void) {
   WebsocketMock* const mock = (WebsocketMock*)EEBUS_MALLOC(sizeof(WebsocketMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  WebsocketMockConstruct(mock);
-
-  mock->gmock = new WebsocketGMock();
+  if (WebsocketMockConstruct(mock) != kEebusErrorOk) {
+    WebsocketMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/feature_remote_interface.h"
 
 static void Destruct(FeatureObject* self);
@@ -75,19 +74,30 @@ static const FeatureRemoteInterface feature_remote_methods = {
     .get_max_response_delay  = GetMaxResponseDelay,
 };
 
-static void FeatureRemoteMockConstruct(FeatureRemoteMock* self);
+static EebusError FeatureRemoteMockConstruct(FeatureRemoteMock* self);
 
-void FeatureRemoteMockConstruct(FeatureRemoteMock* self) {
+EebusError FeatureRemoteMockConstruct(FeatureRemoteMock* self) {
   // Override "virtual functions table"
   FEATURE_REMOTE_INTERFACE(self) = &feature_remote_methods;
+
+  self->gmock = new FeatureRemoteGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 FeatureRemoteMock* FeatureRemoteMockCreate(void) {
   FeatureRemoteMock* const mock = (FeatureRemoteMock*)EEBUS_MALLOC(sizeof(FeatureRemoteMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  FeatureRemoteMockConstruct(mock);
-
-  mock->gmock = new FeatureRemoteGMock();
+  if (FeatureRemoteMockConstruct(mock) != kEebusErrorOk) {
+    FeatureRemoteMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

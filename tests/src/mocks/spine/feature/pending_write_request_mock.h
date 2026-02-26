@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/pending_write_request_interface.h"
 
 class PendingWriteRequestGMockInterface {
@@ -64,5 +65,12 @@ typedef struct PendingWriteRequestMock {
 #define PENDING_WRITE_REQUEST_MOCK(obj) ((PendingWriteRequestMock*)(obj))
 
 PendingWriteRequestMock* PendingWriteRequestMockCreate(void);
+
+static inline void PendingWriteRequestMockDelete(PendingWriteRequestMock* self) {
+  if (self != nullptr) {
+    PENDING_WRITE_REQUEST_DESTRUCT(PENDING_WRITE_REQUEST_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_FEATURE_PENDING_WRITE_REQUEST_MOCK_H_

@@ -21,7 +21,6 @@
 #include "heartbeat_manager_mock.h"
 
 #include <gmock/gmock.h>
-#include <jpi/osal/osal.h>
 
 #include "src/spine/api/heartbeat_manager_interface.h"
 
@@ -41,19 +40,30 @@ static const HeartbeatManagerInterface heartbeat_manager_methods = {
     .stop                 = Stop,
 };
 
-static void HeartbeatManagerMockConstruct(HeartbeatManagerMock* self);
+static EebusError HeartbeatManagerMockConstruct(HeartbeatManagerMock* self);
 
-void HeartbeatManagerMockConstruct(HeartbeatManagerMock* self) {
+EebusError HeartbeatManagerMockConstruct(HeartbeatManagerMock* self) {
   // Override "virtual functions table"
   HEARTBEAT_MANAGER_INTERFACE(self) = &heartbeat_manager_methods;
+
+  self->gmock = new HeartbeatManagerGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 HeartbeatManagerMock* HeartbeatManagerMockCreate(void) {
   HeartbeatManagerMock* const mock = (HeartbeatManagerMock*)EEBUS_MALLOC(sizeof(HeartbeatManagerMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  HeartbeatManagerMockConstruct(mock);
-
-  mock->gmock = new HeartbeatManagerGMock();
+  if (HeartbeatManagerMockConstruct(mock) != kEebusErrorOk) {
+    HeartbeatManagerMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

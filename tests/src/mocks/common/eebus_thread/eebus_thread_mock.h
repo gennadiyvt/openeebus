@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "src/common/api/eebus_thread_interface.h"
+#include "src/common/eebus_malloc.h"
 
 class EebusThreadGMockInterface {
  public:
@@ -50,5 +51,12 @@ typedef struct EebusThreadMock {
 #define EEBUS_THREAD_MOCK(obj) ((EebusThreadMock*)(obj))
 
 EebusThreadMock* EebusThreadMockCreate(void);
+
+static inline void EebusThreadMockDelete(EebusThreadMock* self) {
+  if (self != nullptr) {
+    EEBUS_THREAD_DESTRUCT(EEBUS_THREAD_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_COMMON_EEBUS_THREAD_EEBUS_THREAD_MOCK_H_

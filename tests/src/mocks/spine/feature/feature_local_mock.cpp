@@ -21,7 +21,6 @@
 #include "feature_local_mock.h"
 
 #include <gmock/gmock.h>
-#include "src/common/eebus_malloc.h"
 
 #include "src/spine/api/feature_local_interface.h"
 
@@ -111,19 +110,30 @@ static const FeatureLocalInterface feature_local_methods = {
     .tick                                  = Tick,
 };
 
-static void FeatureLocalMockConstruct(FeatureLocalMock* self);
+static EebusError FeatureLocalMockConstruct(FeatureLocalMock* self);
 
-void FeatureLocalMockConstruct(FeatureLocalMock* self) {
+EebusError FeatureLocalMockConstruct(FeatureLocalMock* self) {
   // Override "virtual functions table"
   FEATURE_LOCAL_INTERFACE(self) = &feature_local_methods;
+
+  self->gmock = new FeatureLocalGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 FeatureLocalMock* FeatureLocalMockCreate(void) {
   FeatureLocalMock* const mock = (FeatureLocalMock*)EEBUS_MALLOC(sizeof(FeatureLocalMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  FeatureLocalMockConstruct(mock);
-
-  mock->gmock = new FeatureLocalGMock();
+  if (FeatureLocalMockConstruct(mock) != kEebusErrorOk) {
+    FeatureLocalMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

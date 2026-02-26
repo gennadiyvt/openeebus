@@ -21,7 +21,6 @@
 #include "http_server_mock.h"
 
 #include <gmock/gmock.h>
-#include <jpi/osal/osal.h>
 
 #include "src/ship/api/http_server_interface.h"
 
@@ -35,19 +34,30 @@ static const HttpServerInterface http_server_methods = {
     .stop     = Stop,
 };
 
-static void HttpServerMockConstruct(HttpServerMock* self);
+static EebusError HttpServerMockConstruct(HttpServerMock* self);
 
-void HttpServerMockConstruct(HttpServerMock* self) {
+EebusError HttpServerMockConstruct(HttpServerMock* self) {
   // Override "virtual functions table"
   HTTP_SERVER_INTERFACE(self) = &http_server_methods;
+
+  self->gmock = new HttpServerGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 HttpServerMock* HttpServerMockCreate(void) {
   HttpServerMock* const mock = (HttpServerMock*)EEBUS_MALLOC(sizeof(HttpServerMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  HttpServerMockConstruct(mock);
-
-  mock->gmock = new HttpServerGMock();
+  if (HttpServerMockConstruct(mock) != kEebusErrorOk) {
+    HttpServerMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

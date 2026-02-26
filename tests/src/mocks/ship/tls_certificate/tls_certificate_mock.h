@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/ship/api/tls_certificate_interface.h"
 
 class TlsCertificateGMockInterface {
@@ -58,5 +59,12 @@ typedef struct TlsCertificateMock {
 #define TLS_CERTIFICATE_MOCK(obj) ((TlsCertificateMock*)(obj))
 
 TlsCertificateMock* TlsCertificateMockCreate(void);
+
+static inline void TlsCertificateMockDelete(TlsCertificateMock* self) {
+  if (self != nullptr) {
+    TLS_CERTIFICATE_DESTRUCT(TLS_CERTIFICATE_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SHIP_TLS_CERTIFICATE_TLS_CERTIFICATE_MOCK_H_

@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/heartbeat_manager_interface.h"
 
 class HeartbeatManagerGMockInterface {
@@ -59,5 +60,12 @@ typedef struct HeartbeatManagerMock {
 #define HEARTBEAT_MANAGER_MOCK(obj) ((HeartbeatManagerMock*)(obj))
 
 HeartbeatManagerMock* HeartbeatManagerMockCreate(void);
+
+static inline void HeartbeatManagerMockDelete(HeartbeatManagerMock* self) {
+  if (self != nullptr) {
+    HEARTBEAT_MANAGER_DESTRUCT(HEARTBEAT_MANAGER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_HEARTBEAT_HEARTBEAT_MANAGER_MOCK_H_

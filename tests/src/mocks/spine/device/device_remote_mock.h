@@ -26,7 +26,6 @@
 #include <memory>
 
 #include "device_mock.h"
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/device_remote_interface.h"
 
 class DeviceRemoteGMockInterface : public DeviceGMockInterface {

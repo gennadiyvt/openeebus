@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/subscription_manager_interface.h"
 
 class SubscriptionManagerGMockInterface {
@@ -82,5 +83,12 @@ typedef struct SubscriptionManagerMock {
 #define SUBSCRIPTION_MANAGER_MOCK(obj) ((SubscriptionManagerMock*)(obj))
 
 SubscriptionManagerMock* SubscriptionManagerMockCreate(void);
+
+static inline void SubscriptionManagerMockDelete(SubscriptionManagerMock* self) {
+  if (self != nullptr) {
+    SUBSCRIPTION_MANAGER_DESTRUCT(SUBSCRIPTION_MANAGER_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_SUBSCRIPTION_SUBSCRIPTION_MANAGER_MOCK_H_

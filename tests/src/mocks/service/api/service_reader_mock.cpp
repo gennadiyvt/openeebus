@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/service/api/service_reader_interface.h"
 
 static void Destruct(ServiceReaderObject* self);
@@ -43,19 +42,30 @@ static const ServiceReaderInterface service_reader_methods = {
     .is_waiting_for_trust_allowed = IsWaitingForTrustAllowed,
 };
 
-static void ServiceReaderMockConstruct(ServiceReaderMock* self);
+static EebusError ServiceReaderMockConstruct(ServiceReaderMock* self);
 
-void ServiceReaderMockConstruct(ServiceReaderMock* self) {
+EebusError ServiceReaderMockConstruct(ServiceReaderMock* self) {
   // Override "virtual functions table"
   SERVICE_READER_INTERFACE(self) = &service_reader_methods;
+
+  self->gmock = new ServiceReaderGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 ServiceReaderMock* ServiceReaderMockCreate(void) {
   ServiceReaderMock* const mock = (ServiceReaderMock*)EEBUS_MALLOC(sizeof(ServiceReaderMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  ServiceReaderMockConstruct(mock);
-
-  mock->gmock = new ServiceReaderGMock();
+  if (ServiceReaderMockConstruct(mock) != kEebusErrorOk) {
+    ServiceReaderMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

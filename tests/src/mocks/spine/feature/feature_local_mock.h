@@ -138,4 +138,11 @@ typedef struct FeatureLocalMock {
 
 FeatureLocalMock* FeatureLocalMockCreate(void);
 
+static inline void FeatureLocalMockDelete(FeatureLocalMock* self) {
+  if (self != nullptr) {
+    FEATURE_DESTRUCT(FEATURE_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
+
 #endif  // TESTS_SRC_MOCKS_SPINE_FEATURE_FEATURE_LOCAL_MOCK_H_

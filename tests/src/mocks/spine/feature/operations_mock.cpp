@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/spine/api/operations_interface.h"
 
 static void Destruct(OperationsObject* self);
@@ -43,19 +42,30 @@ static const OperationsInterface operations_methods = {
     .get_information   = GetInformation,
 };
 
-static void OperationsMockConstruct(OperationsMock* self);
+static EebusError OperationsMockConstruct(OperationsMock* self);
 
-void OperationsMockConstruct(OperationsMock* self) {
+EebusError OperationsMockConstruct(OperationsMock* self) {
   // Override "virtual functions table"
   OPERATIONS_INTERFACE(self) = &operations_methods;
+
+  self->gmock = new OperationsGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 OperationsMock* OperationsMockCreate(void) {
   OperationsMock* const mock = (OperationsMock*)EEBUS_MALLOC(sizeof(OperationsMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  OperationsMockConstruct(mock);
-
-  mock->gmock = new OperationsGMock();
+  if (OperationsMockConstruct(mock) != kEebusErrorOk) {
+    OperationsMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }

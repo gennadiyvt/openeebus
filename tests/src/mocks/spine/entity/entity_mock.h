@@ -25,6 +25,7 @@
 
 #include <memory>
 
+#include "src/common/eebus_malloc.h"
 #include "src/spine/api/entity_interface.h"
 
 class EntityGMockInterface {
@@ -58,5 +59,12 @@ typedef struct EntityMock {
 #define ENTITY_MOCK(obj) ((EntityMock*)(obj))
 
 EntityMock* EntityMockCreate(void);
+
+static inline void EntityMockDelete(EntityMock* self) {
+  if (self != nullptr) {
+    ENTITY_DESTRUCT(ENTITY_OBJECT(self));
+    EEBUS_FREE(self);
+  }
+}
 
 #endif  // TESTS_SRC_MOCKS_SPINE_ENTITY_ENTITY_MOCK_H_

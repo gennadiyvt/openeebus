@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 
-#include "src/common/eebus_malloc.h"
 #include "src/service/api/eebus_service_interface.h"
 
 static void Destruct(ShipNodeReaderObject* self);
@@ -70,19 +69,30 @@ static const EebusServiceInterface eebus_service_methods = {
     .get_local_ski                       = GetLocalSki,
 };
 
-static void EebusServiceMockConstruct(EebusServiceMock* self);
+static EebusError EebusServiceMockConstruct(EebusServiceMock* self);
 
-void EebusServiceMockConstruct(EebusServiceMock* self) {
+EebusError EebusServiceMockConstruct(EebusServiceMock* self) {
   // Override "virtual functions table"
   EEBUS_SERVICE_INTERFACE(self) = &eebus_service_methods;
+
+  self->gmock = new EebusServiceGMock();
+  if (self->gmock == nullptr) {
+    return kEebusErrorMemoryAllocate;
+  }
+
+  return kEebusErrorOk;
 }
 
 EebusServiceMock* EebusServiceMockCreate(void) {
   EebusServiceMock* const mock = (EebusServiceMock*)EEBUS_MALLOC(sizeof(EebusServiceMock));
+  if (mock == nullptr) {
+    return nullptr;
+  }
 
-  EebusServiceMockConstruct(mock);
-
-  mock->gmock = new EebusServiceGMock();
+  if (EebusServiceMockConstruct(mock) != kEebusErrorOk) {
+    EebusServiceMockDelete(mock);
+    return nullptr;
+  }
 
   return mock;
 }
