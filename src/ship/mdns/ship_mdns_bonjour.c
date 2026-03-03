@@ -746,7 +746,7 @@ static void* MdnsBrowserLoop(void* parameters) {
     }
 
     struct timeval tv = select_timeout;
-    int n             = select(maxfd + 1, &readfds, NULL, NULL, &tv);
+    const int n       = select(maxfd + 1, &readfds, NULL, NULL, &tv);
 
     if (n < 0) {
       if (errno == EINTR) {
@@ -755,15 +755,15 @@ static void* MdnsBrowserLoop(void* parameters) {
       break;
     }
 
+    if (n > 0) {
+      MdnsDispatchReadyFds(mdns, &readfds, browse_fd, register_fd);
+    }
+
     const uint32_t now_seconds = MdnsGetCurrentTimeSeconds();
     if (now_seconds >= next_notify_time_seconds) {
       MdnsNotifyFoundEntries(mdns);
       next_notify_time_seconds
           = now_seconds + MdnsGetRandomInterval(kMdnsBrowseIntervalMinSeconds, kMdnsBrowseIntervalMaxSeconds);
-    }
-
-    if (n > 0) {
-      MdnsDispatchReadyFds(mdns, &readfds, browse_fd, register_fd);
     }
   }
 
