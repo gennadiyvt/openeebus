@@ -54,13 +54,14 @@ bool LoadControlLimitIsActive(const LoadControlLimitDataType* limit) {
   return *limit->is_limit_active;
 }
 
-EebusError LoadControlLimitGetDuration(const LoadControlLimitDataType* limit, DurationType* duration) {
-  if (duration == NULL) {
+EebusError LoadControlLimitGetDuration(const LoadControlLimitDataType* limit, DurationType* duration, bool* is_null) {
+  if ((duration == NULL) || (is_null == NULL)) {
     return kEebusErrorInputArgumentNull;
   }
 
-  if ((limit->time_period == NULL) || (limit->time_period->end_time == NULL)) {
-    return kEebusErrorNoChange;
+  *is_null = (limit->time_period == NULL) || (limit->time_period->end_time == NULL);
+  if (*is_null) {
+    return kEebusErrorOk;
   }
 
   if (limit->time_period->end_time->type != kAbsoluteOrRelativeTimeTypeDuration) {

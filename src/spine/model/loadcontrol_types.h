@@ -269,7 +269,7 @@ struct LoadControlLimitDescriptionListDataSelectorsType {
 bool LoadControlLimitIsValid(const LoadControlLimitDataType* limit);
 bool LoadControlLimitIsLimitChangeable(const LoadControlLimitDataType* limit);
 bool LoadControlLimitIsActive(const LoadControlLimitDataType* limit);
-EebusError LoadControlLimitGetDuration(const LoadControlLimitDataType* limit, DurationType* duration);
+EebusError LoadControlLimitGetDuration(const LoadControlLimitDataType* limit, DurationType* duration, bool* is_null);
 const ScaledNumberType* LoadControlLimitGetValue(const LoadControlLimitDataType* limit);
 
 #ifdef __cplusplus

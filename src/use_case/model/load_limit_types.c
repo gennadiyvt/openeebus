@@ -41,9 +41,7 @@ EebusError LoadLimitInitWithLoadControlLimitData(LoadLimit* self, const LoadCont
   self->is_changeable = LoadControlLimitIsLimitChangeable(limit_data);
   self->is_active     = LoadControlLimitIsActive(limit_data);
 
-  // TODO: Handle unlimited duration (missing time period means "unlimited")
-  LoadControlLimitGetDuration(limit_data, &self->duration);
-  return kEebusErrorOk;
+  return LoadControlLimitGetDuration(limit_data, &self->duration, &self->delete_duration);
 }
 
 void LoadLimitPrint(const LoadLimit* self) {

@@ -42,8 +42,9 @@ struct LoadLimit {
   DurationType duration; /**< Duration of the limit */
   bool is_changeable;    /**< If the value can be changed via write, ignored when writing data */
   bool is_active;        /**< If the limit is active */
-  bool delete_duration;  /**< If the Duration (TimePeriod in SPINE) should be deleted (only used for write commands.
-                            Relevant for LPC & LPP only) */
+  bool delete_duration;  /**< If the Duration (TimePeriod in SPINE) is absent or should be deleted.
+                            On read: true means no time period was present (unlimited duration).
+                            On write: true means the time period should be removed. Relevant for LPC & LPP only) */
 };
 
 /**
