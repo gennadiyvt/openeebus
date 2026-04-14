@@ -57,6 +57,7 @@ void DatagramDelete(DatagramType* datagram);
 DatagramType* DatagramParse(const char* s);
 char* DatagramPrintUnformatted(const DatagramType* datagram);
 DatagramType* DatagramCopy(const DatagramType* datagram);
+bool DatagramHeaderCompare(const HeaderType* header_a, const HeaderType* header_b);
 
 #ifdef __cplusplus
 }

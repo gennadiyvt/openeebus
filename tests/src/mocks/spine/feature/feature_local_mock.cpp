@@ -33,7 +33,7 @@ AddResponseCallback(FeatureLocalObject* self, MsgCounterType msg_counter_ref, Re
 static void AddResultCallback(FeatureLocalObject* self, ResponseMessageCallback cb, void* ctx);
 static EebusError AddWriteApprovalCallback(FeatureLocalObject* self, WriteApprovalCallback cb, void* ctx);
 static EebusError TryApproveWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt);
-static EebusError DenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, EebusError err_num);
+static EebusError DenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, const ErrorType* err);
 static void CleanRemoteDeviceCaches(FeatureLocalObject* self, const DeviceAddressType* remote_addr);
 static void* DataCopy(const FeatureLocalObject* self, FunctionType function_type);
 static EebusError UpdateData(
@@ -220,9 +220,9 @@ EebusError TryApproveWrite(FeatureLocalObject* self, const char* ski, MsgCounter
   return mock->gmock->TryApproveWrite(self, ski, msg_cnt);
 }
 
-EebusError DenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, EebusError err_num) {
+EebusError DenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, const ErrorType* err) {
   FeatureLocalMock* const mock = FEATURE_LOCAL_MOCK(self);
-  return mock->gmock->DenyWrite(self, ski, msg_cnt, err_num);
+  return mock->gmock->DenyWrite(self, ski, msg_cnt, err);
 }
 
 void CleanRemoteDeviceCaches(FeatureLocalObject* self, const DeviceAddressType* remote_addr) {

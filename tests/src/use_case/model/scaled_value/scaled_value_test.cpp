@@ -16,6 +16,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <limits>
+#include <memory>
 #include <string_view>
 
 #include "src/common/string_util.h"
@@ -23,6 +25,11 @@
 
 using std::literals::string_view_literals::operator""sv;
 
+//-------------------------------------------------------------------------------------------//
+//
+// ScaledValueToString() test
+//
+//-------------------------------------------------------------------------------------------//
 struct ScaledValueToStringTestInput {
   std::string_view description{""sv};
   ScaledValue scaled_value{0, 0};
@@ -163,8 +170,13 @@ INSTANTIATE_TEST_SUITE_P(
             .s            = "0",
         },
         ScaledValueToStringTestInput{
-            .description  = "Zero with scale"sv,
+            .description  = "Zero with negative scale"sv,
             .scaled_value = ScaledValue{0, -1},
+            .s            = "0",
+        },
+        ScaledValueToStringTestInput{
+            .description  = "Zero with positive scale"sv,
+            .scaled_value = ScaledValue{0, 1},
             .s            = "0",
         },
         // Leading zeros handled as normalized values
@@ -198,10 +210,68 @@ INSTANTIATE_TEST_SUITE_P(
             .description  = "Many decimal places"sv,
             .scaled_value = ScaledValue{1123456789, -9},
             .s            = "1.123456789",
+        },
+        // Positive scale tests
+        ScaledValueToStringTestInput{
+            .description  = "Positive scale by 10"sv,
+            .scaled_value = ScaledValue{7, 1},
+            .s            = "70",
+        },
+        ScaledValueToStringTestInput{
+            .description  = "Positive scale by 100"sv,
+            .scaled_value = ScaledValue{5, 2},
+            .s            = "500",
+        },
+        ScaledValueToStringTestInput{
+            .description  = "Positive scale by 1000"sv,
+            .scaled_value = ScaledValue{1, 3},
+            .s            = "1000",
+        },
+        ScaledValueToStringTestInput{
+            .description  = "Negative value positive scale"sv,
+            .scaled_value = ScaledValue{-3, 1},
+            .s            = "-30",
+        },
+        // Negative scale with zero fraction (evenly divisible)
+        ScaledValueToStringTestInput{
+            .description  = "Negative scale zero fraction"sv,
+            .scaled_value = ScaledValue{10, -1},
+            .s            = "1",
+        },
+        ScaledValueToStringTestInput{
+            .description  = "Negative scale zero fraction two places"sv,
+            .scaled_value = ScaledValue{200, -2},
+            .s            = "2",
+        },
+        // Out-of-range scale returns NULL
+        ScaledValueToStringTestInput{
+            .description  = "Scale 19 exceeds kMaxSafeScale"sv,
+            .scaled_value = ScaledValue{1, 19},
+            .s            = nullptr,
+        },
+        ScaledValueToStringTestInput{
+            .description  = "INT8_MAX scale"sv,
+            .scaled_value = ScaledValue{1, INT8_MAX},
+            .s            = nullptr,
+        },
+        ScaledValueToStringTestInput{
+            .description  = "Scale -19 exceeds kMaxSafeScale"sv,
+            .scaled_value = ScaledValue{1, -19},
+            .s            = nullptr,
+        },
+        ScaledValueToStringTestInput{
+            .description  = "INT8_MIN scale"sv,
+            .scaled_value = ScaledValue{1, INT8_MIN},
+            .s            = nullptr,
         }
     )
 );
 
+//-------------------------------------------------------------------------------------------//
+//
+// ScaledValueParse() test
+//
+//-------------------------------------------------------------------------------------------//
 struct ScaledValueParseTestInput {
   std::string_view description{""sv};
   const char* s{nullptr};
@@ -512,6 +582,271 @@ INSTANTIATE_TEST_SUITE_P(
             .description  = "Many decimal places"sv,
             .s            = "1.123456789",
             .scaled_value = ScaledValue{1123456789, -9},
+        }
+    )
+);
+
+//-------------------------------------------------------------------------------------------//
+//
+// ScaledValueToDouble() test
+//
+//-------------------------------------------------------------------------------------------//
+struct ScaledValueToDoubleTestInput {
+  std::string_view description{""sv};
+  ScaledValue scaled_value{0, 0};
+  bool null_scaled_value{false};
+  bool null_output{false};
+  EebusError expected_ret{kEebusErrorOk};
+  double expected{0.0};
+};
+
+std::ostream& operator<<(std::ostream& os, ScaledValueToDoubleTestInput test_input) {
+  return os << test_input.description;
+}
+
+class ScaledValueToDoubleTests : public ::testing::TestWithParam<ScaledValueToDoubleTestInput> {};
+
+TEST_P(ScaledValueToDoubleTests, ScaledValueToDoubleTests) {
+  const ScaledValue* const input = GetParam().null_scaled_value ? nullptr : &GetParam().scaled_value;
+  double value{0.0};
+  double* const output = GetParam().null_output ? nullptr : &value;
+  EXPECT_EQ(ScaledValueToDouble(input, output), GetParam().expected_ret);
+  if (GetParam().expected_ret == kEebusErrorOk) {
+    EXPECT_DOUBLE_EQ(value, GetParam().expected);
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    ScaledValueToDoubleTests,
+    ScaledValueToDoubleTests,
+    ::testing::Values(
+        ScaledValueToDoubleTestInput{
+            .description  = "Zero"sv,
+            .scaled_value = ScaledValue{0, 0},
+            .expected     = 0.0,
+},
+        ScaledValueToDoubleTestInput{
+            .description  = "Positive integer"sv,
+            .scaled_value = ScaledValue{123, 0},
+            .expected     = 123.0,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Negative integer"sv,
+            .scaled_value = ScaledValue{-456, 0},
+            .expected     = -456.0,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Positive scale multiplies"sv,
+            .scaled_value = ScaledValue{5, 2},
+            .expected     = 500.0,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Negative scale one decimal"sv,
+            .scaled_value = ScaledValue{125, -1},
+            .expected     = 12.5,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Negative scale two decimals"sv,
+            .scaled_value = ScaledValue{12345, -2},
+            .expected     = 123.45,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Negative decimal two places"sv,
+            .scaled_value = ScaledValue{-12345, -2},
+            .expected     = -123.45,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Very small positive"sv,
+            .scaled_value = ScaledValue{1, -3},
+            .expected     = 0.001,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Very small negative"sv,
+            .scaled_value = ScaledValue{-7, -3},
+            .expected     = -0.007,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Four decimal places"sv,
+            .scaled_value = ScaledValue{98765, -4},
+            .expected     = 9.8765,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Value between -1 and 0"sv,
+            .scaled_value = ScaledValue{-5, -1},
+            .expected     = -0.5,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Large positive"sv,
+            .scaled_value = ScaledValue{99999999999999, 0},
+            .expected     = 99999999999999.0,
+        },
+        ScaledValueToDoubleTestInput{
+            .description       = "Null scaled value"sv,
+            .null_scaled_value = true,
+            .expected_ret      = kEebusErrorInputArgumentNull,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Null output"sv,
+            .null_output  = true,
+            .expected_ret = kEebusErrorInputArgumentNull,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "INT8_MIN scale"sv,
+            .scaled_value = ScaledValue{1, INT8_MIN},
+            .expected_ret = kEebusErrorInputArgumentOutOfRange,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Scale 19 overflows PowerOfTen"sv,
+            .scaled_value = ScaledValue{1, 19},
+            .expected_ret = kEebusErrorInputArgumentOutOfRange,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Scale -19 overflows PowerOfTen"sv,
+            .scaled_value = ScaledValue{1, -19},
+            .expected_ret = kEebusErrorInputArgumentOutOfRange,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Scale 18 is within safe range"sv,
+            .scaled_value = ScaledValue{1, 18},
+            .expected     = 1e18,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Scale -18 is within safe range"sv,
+            .scaled_value = ScaledValue{1, -18},
+            .expected     = 1e-18,
+        },
+        ScaledValueToDoubleTestInput{
+            .description  = "Zero value with out-of-range scale returns 0.0"sv,
+            .scaled_value = ScaledValue{0, 19},
+            .expected     = 0.0,
+        }
+    )
+);
+
+//-------------------------------------------------------------------------------------------//
+//
+// ScaledValueWithDouble() test
+//
+//-------------------------------------------------------------------------------------------//
+struct ScaledValueWithDoubleTestInput {
+  std::string_view description{""sv};
+  double value{0.0};
+  EebusError expected_ret{kEebusErrorOk};
+  ScaledValue expected{0, 0};
+};
+
+std::ostream& operator<<(std::ostream& os, ScaledValueWithDoubleTestInput test_input) {
+  return os << test_input.description;
+}
+
+class ScaledValueWithDoubleTests : public ::testing::TestWithParam<ScaledValueWithDoubleTestInput> {};
+
+TEST_P(ScaledValueWithDoubleTests, ScaledValueWithDoubleTests) {
+  ScaledValue sv{0, 0};
+  EXPECT_EQ(ScaledValueWithDouble(&sv, GetParam().value), GetParam().expected_ret);
+  if (GetParam().expected_ret == kEebusErrorOk) {
+    EXPECT_EQ(sv.value, GetParam().expected.value);
+    EXPECT_EQ(sv.scale, GetParam().expected.scale);
+  }
+}
+
+TEST(ScaledValueWithDoubleTest, NullScaledValue) {
+  EXPECT_EQ(ScaledValueWithDouble(nullptr, 1.0), kEebusErrorInputArgumentNull);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    ScaledValueWithDoubleTests,
+    ScaledValueWithDoubleTests,
+    ::testing::Values(
+        ScaledValueWithDoubleTestInput{
+            .description = "Zero"sv,
+            .value       = 0.0,
+            .expected    = ScaledValue{0, 0},
+},
+        ScaledValueWithDoubleTestInput{
+            .description = "Positive integer uses scale 0"sv,
+            .value       = 123.0,
+            .expected    = ScaledValue{123, 0},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "Negative integer uses scale 0"sv,
+            .value       = -456.0,
+            .expected    = ScaledValue{-456, 0},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "One decimal place uses scale -1"sv,
+            .value       = 12.5,
+            .expected    = ScaledValue{125, -1},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "Negative one decimal uses scale -1"sv,
+            .value       = -0.5,
+            .expected    = ScaledValue{-5, -1},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "Two decimal places uses scale -2"sv,
+            .value       = 123.45,
+            .expected    = ScaledValue{12345, -2},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "Negative two decimals uses scale -2"sv,
+            .value       = -123.45,
+            .expected    = ScaledValue{-12345, -2},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "Three decimal places uses scale -3"sv,
+            .value       = 1.234,
+            .expected    = ScaledValue{1234, -3},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "Very small uses scale -3"sv,
+            .value       = 0.001,
+            .expected    = ScaledValue{1, -3},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "Four decimal places uses scale -4"sv,
+            .value       = 9.8765,
+            .expected    = ScaledValue{98765, -4},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "Four decimal minimum uses scale -4"sv,
+            .value       = 0.0001,
+            .expected    = ScaledValue{1, -4},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "More than four decimals falls back to scale -4"sv,
+            .value       = 1.23456,
+            .expected    = ScaledValue{12346, -4},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description = "Large integer uses scale 0"sv,
+            .value       = 999999.0,
+            .expected    = ScaledValue{999999, 0},
+        },
+        ScaledValueWithDoubleTestInput{
+            .description  = "Positive infinity"sv,
+            .value        = std::numeric_limits<double>::infinity(),
+            .expected_ret = kEebusErrorInputArgumentOutOfRange,
+        },
+        ScaledValueWithDoubleTestInput{
+            .description  = "Negative infinity"sv,
+            .value        = -std::numeric_limits<double>::infinity(),
+            .expected_ret = kEebusErrorInputArgumentOutOfRange,
+        },
+        ScaledValueWithDoubleTestInput{
+            .description  = "NaN"sv,
+            .value        = std::numeric_limits<double>::quiet_NaN(),
+            .expected_ret = kEebusErrorInputArgumentOutOfRange,
+        },
+        ScaledValueWithDoubleTestInput{
+            .description  = "Too large positive"sv,
+            .value        = 1e15,
+            .expected_ret = kEebusErrorInputArgumentOutOfRange,
+        },
+        ScaledValueWithDoubleTestInput{
+            .description  = "Too large negative"sv,
+            .value        = -1e15,
+            .expected_ret = kEebusErrorInputArgumentOutOfRange,
         }
     )
 );

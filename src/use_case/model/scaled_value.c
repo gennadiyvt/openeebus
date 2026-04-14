@@ -28,6 +28,9 @@
 #include "src/spine/model/common_data_types.h"
 #include "src/use_case/model/scaled_value.h"
 
+/* Maximum |scale| for which PowerOfTen() is safe: 10^18 < INT64_MAX < 10^19 */
+static const int kMaxSafeScale = 18;
+
 EebusError ScaledValueInitWithScaledNumber(ScaledValue* scaled_value, const ScaledNumberType* scaled_number) {
   if ((scaled_value == NULL) || (scaled_number == NULL)) {
     return kEebusErrorInputArgumentNull;
@@ -48,35 +51,39 @@ const char* ScaledValueToString(const ScaledValue* scaled_value) {
     return NULL;
   }
 
-  int8_t scale_tmp = scaled_value->scale;
-  if (scale_tmp < 0) {
-    scale_tmp = -scale_tmp;
+  if ((scaled_value->scale == 0) || (scaled_value->value == 0)) {
+    return StringFmtSprintf("%" PRId64, scaled_value->value);
   }
 
+  if ((scaled_value->scale > kMaxSafeScale) || (scaled_value->scale < -kMaxSafeScale)) {
+    return NULL;
+  }
+
+  if (scaled_value->scale > 0) {
+    /* Append scale zeros — avoids int64_t overflow from multiplication */
+    return StringFmtSprintf("%" PRId64 "%.*d", scaled_value->value, (int)scaled_value->scale, 0);
+  }
+
+  /* scale < 0: split into integer and fractional parts */
+  /* Use int to avoid int8_t overflow when negating INT8_MIN (-128) */
+  const int scale_abs        = -(int)scaled_value->scale;
+  const int8_t scale_tmp     = (int8_t)scale_abs;
   const int64_t power_of_ten = PowerOfTen(scale_tmp);
-
-  int64_t value    = scaled_value->value;
-  int64_t fraction = 0;
-
-  if (scaled_value->scale < 0) {
-    value    = scaled_value->value / power_of_ten;
-    fraction = scaled_value->value % power_of_ten;
-    if (fraction < 0) {
-      fraction = -fraction;
-    }
-  } else if (scaled_value->scale > 0) {
-    value = scaled_value->value * power_of_ten;
+  const int64_t value        = scaled_value->value / power_of_ten;
+  int64_t fraction           = scaled_value->value % power_of_ten;
+  if (fraction < 0) {
+    fraction = -fraction;
   }
 
   if (fraction == 0) {
-    return StringFmtSprintf("%" PRId64, scaled_value->value);
-  } else {
-    if ((value == 0) && (scaled_value->value < 0)) {
-      return StringFmtSprintf("-%" PRId64 ".%.*" PRId64, value, scale_tmp, fraction);
-    } else {
-      return StringFmtSprintf("%" PRId64 ".%.*" PRId64, value, scale_tmp, fraction);
-    }
+    return StringFmtSprintf("%" PRId64, value);
   }
+
+  if ((value == 0) && (scaled_value->value < 0)) {
+    return StringFmtSprintf("-%" PRId64 ".%.*" PRId64, value, (int)scale_tmp, fraction);
+  }
+
+  return StringFmtSprintf("%" PRId64 ".%.*" PRId64, value, (int)scale_tmp, fraction);
 }
 
 void ScaledValuePrint(const char* fmt, const ScaledValue* scaled_value) {
@@ -150,5 +157,69 @@ EebusError ScaledValueParse(const char* s, ScaledValue* scaled_value) {
   scaled_value->value = value;
   scaled_value->scale = scale;
 
+  return kEebusErrorOk;
+}
+
+static int64_t RoundToInt64(double d) {
+  return (int64_t)(d >= 0.0 ? d + 0.5 : d - 0.5);
+}
+
+EebusError ScaledValueToDouble(const ScaledValue* scaled_value, double* value) {
+  if ((scaled_value == NULL) || (value == NULL)) {
+    return kEebusErrorInputArgumentNull;
+  }
+
+  if (scaled_value->value == 0) {
+    *value = 0.0;
+    return kEebusErrorOk;
+  }
+
+  if ((scaled_value->scale > kMaxSafeScale) || (scaled_value->scale < -kMaxSafeScale)) {
+    return kEebusErrorInputArgumentOutOfRange;
+  }
+
+  if (scaled_value->scale >= 0) {
+    *value = (double)scaled_value->value * (double)PowerOfTen(scaled_value->scale);
+  } else {
+    const int8_t scale = (int8_t)(-scaled_value->scale);
+    *value             = (double)scaled_value->value / (double)PowerOfTen(scale);
+  }
+
+  return kEebusErrorOk;
+}
+
+EebusError ScaledValueWithDouble(ScaledValue* scaled_value, double value) {
+  if (scaled_value == NULL) {
+    return kEebusErrorInputArgumentNull;
+  }
+
+  /* Most negative scale produced: value is multiplied by 10^4 then trailing zeros
+   * are stripped, so precision is at most 4 decimal places */
+  static const int8_t kMaxNegativeScale = -4;
+
+  const int64_t scale_factor = PowerOfTen(-kMaxNegativeScale);
+  const int64_t max_abs_int  = INT64_MAX / scale_factor;
+  const double max_abs_value = (double)max_abs_int;
+
+  if ((value != value) || (value < -max_abs_value) || (value > max_abs_value)) {
+    return kEebusErrorInputArgumentOutOfRange;
+  }
+
+  const double scaled     = value * (double)scale_factor;
+  const double scaled_max = max_abs_value * (double)scale_factor;
+  if ((scaled != scaled) || (scaled > scaled_max) || (scaled < -scaled_max)) {
+    return kEebusErrorInputArgumentOutOfRange;
+  }
+
+  int64_t int_value = RoundToInt64(scaled);
+  int8_t scale      = kMaxNegativeScale;
+
+  while (scale < 0 && int_value % 10 == 0) {
+    int_value /= 10;
+    ++scale;
+  }
+
+  scaled_value->value = int_value;
+  scaled_value->scale = scale;
   return kEebusErrorOk;
 }

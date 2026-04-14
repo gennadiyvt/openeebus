@@ -23,6 +23,7 @@
 
 #include <gtest/gtest.h>
 
+#include <map>
 #include <memory>
 
 #include "mocks/common/eebus_timer/eebus_timer_mock.h"
@@ -36,36 +37,49 @@
 #include "src/spine/device/device_local_internal.h"
 #include "src/spine/entity/entity_local.h"
 #include "tests/src/json.h"
-#include "tests/src/use_case/actor/ma/mpc/discovery_request.inc"
-#include "tests/src/use_case/actor/ma/mpc/discovery_response.inc"
-#include "tests/src/use_case/actor/ma/mpc/electrical_connection_description_reply.inc"
-#include "tests/src/use_case/actor/ma/mpc/electrical_connection_parameter_description_reply.inc"
-#include "tests/src/use_case/actor/ma/mpc/measurement_constraints_reply.inc"
-#include "tests/src/use_case/actor/ma/mpc/measurement_description_reply.inc"
-#include "tests/src/use_case/actor/ma/mpc/measurement_notify_current.inc"
-#include "tests/src/use_case/actor/ma/mpc/measurement_notify_energy.inc"
-#include "tests/src/use_case/actor/ma/mpc/measurement_notify_frequency.inc"
-#include "tests/src/use_case/actor/ma/mpc/measurement_notify_power.inc"
-#include "tests/src/use_case/actor/ma/mpc/measurement_notify_voltage.inc"
-#include "tests/src/use_case/actor/ma/mpc/measurement_reply.inc"
-#include "tests/src/use_case/actor/ma/mpc/node_management_subscription_request.inc"
-#include "tests/src/use_case/actor/ma/mpc/result_data_msg_cnt_ref_3.inc"
-#include "tests/src/use_case/actor/ma/mpc/result_data_msg_cnt_ref_5.inc"
-#include "tests/src/use_case/actor/ma/mpc/result_data_msg_cnt_ref_8.inc"
-#include "tests/src/use_case/actor/ma/mpc/use_case_reply.inc"
-#include "tests/src/use_case/actor/ma/mpc/use_case_request.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/discovery_request.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/discovery_response.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/electrical_connection_description_reply.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/electrical_connection_parameter_description_reply.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/measurement_constraints_reply.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/measurement_description_reply.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/measurement_notify_current.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/measurement_notify_energy.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/measurement_notify_frequency.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/measurement_notify_power.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/measurement_notify_voltage.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/measurement_reply.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/node_management_subscription_request.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/result_data_msg_cnt_ref_3.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/result_data_msg_cnt_ref_5.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/result_data_msg_cnt_ref_8.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/use_case_reply.inc"
+#include "tests/src/use_case/actor/ma/mpc/receive/use_case_request.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/discovery_read.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/discovery_reply.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/electrical_connection_description_read.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/electrical_connection_parameter_description_read.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/electrical_connection_subscription_call.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/measurement_constraints_read.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/measurement_description_read.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/measurement_read.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/measurement_subscription_call.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/node_management_subscription_call.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/result_data_msg_cnt_ref_3.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/use_case_data_read.inc"
+#include "tests/src/use_case/actor/ma/mpc/send/use_case_data_reply.inc"
 #include "tests/src/use_case/use_case_test_fixture.h"
 
 using testing::_;
-using testing::Invoke;
 using testing::Return;
-using testing::WithArgs;
+
+namespace ma_mpc_test {
 
 class MaMpcTestFixture : public UseCaseTestFixture {
  public:
   MaMpcTestFixture() : UseCaseTestFixture("HEMS", "HEMS", "123456789") {};
   void SetUpUseCase() override {
-    uint32_t entity_ids[1] = {static_cast<uint32_t>(VectorGetSize(DEVICE_LOCAL_GET_ENTITIES(device_local_.get())))};
+    uint32_t entity_ids[1]{static_cast<uint32_t>(VectorGetSize(DEVICE_LOCAL_GET_ENTITIES(device_local_.get())))};
 
     EntityLocalObject* const entity = EntityLocalCreate(
         device_local_.get(),
@@ -79,6 +93,7 @@ class MaMpcTestFixture : public UseCaseTestFixture {
     use_case_.reset(MaMpcUseCaseCreate(entity, MA_MPC_LISTENER_OBJECT(ma_mpc_listener_mock_.get())));
 
     DEVICE_LOCAL_ADD_ENTITY(device_local_.get(), entity);
+    ExpectSendMessage(send::discovery_read);
   };
 
   void TearDownUseCase() override {
@@ -86,6 +101,17 @@ class MaMpcTestFixture : public UseCaseTestFixture {
     use_case_.reset();
     ma_mpc_listener_mock_.reset();
   };
+
+  void ExpectMeasurementsReceive(
+      MaMpcListenerGMock* mock,
+      const std::map<MuMpcMeasurementNameId, ScaledValue>& expected_measurements
+  ) {
+    for (const auto& [name_id, scaled_value] : expected_measurements) {
+      const int64_t value{scaled_value.value};
+      const int8_t scale{scaled_value.scale};
+      EXPECT_CALL(*mock, OnMeasurementReceive(_, name_id, ScaledValueEq(value, scale), _)).WillOnce(Return());
+    }
+  }
 
  protected:
   std::unique_ptr<MaMpcListenerMock, decltype(&MaMpcListenerMockDelete)> ma_mpc_listener_mock_{
@@ -96,55 +122,61 @@ class MaMpcTestFixture : public UseCaseTestFixture {
   std::unique_ptr<MaMpcUseCaseObject, decltype(&MaMpcUseCaseDelete)> use_case_{nullptr, MaMpcUseCaseDelete};
 };
 
-auto ScaledValueMatcher = [](int64_t value, int8_t scale) {
-  return testing::AllOf(testing::Field(&ScaledValue::value, value), testing::Field(&ScaledValue::scale, scale));
-};
-
-void ExpectMeasurementsReceive(
-    MaMpcListenerGMock* mock,
-    const std::map<MuMpcMeasurementNameId, ScaledValue>& expected_measurements
-) {
-  for (const auto& [name_id, scaled_value] : expected_measurements) {
-    const int64_t value = scaled_value.value;
-    const int8_t scale  = scaled_value.scale;
-    EXPECT_CALL(*mock, OnMeasurementReceive(_, name_id, ScaledValueMatcher(value, scale), _)).WillOnce(Return());
-  }
-}
-
 TEST_F(MaMpcTestFixture, MaMpcTest) {
   // 1. Receive the detailed discovery request and send the response
-  HandleMessage(discovery_request);
-  // 2. Receive the detailed discovery and send the response
+  ExpectSendMessage(send::discovery_reply);
+  HandleMessage(receive::discovery_request);
+
+  // 2. Receive the detailed discovery response and send subscriptions + use case read
   EXPECT_CALL(*ma_mpc_listener_mock_->gmock, OnRemoteEntityConnect(_, _)).WillOnce(Return());
-  HandleMessage(discovery_response);
-  // 3. Receive the Node Management subscription request
-  HandleMessage(node_management_subscription_request);
-  // 4. Receive the use case discovery and send the response
-  HandleMessage(use_case_request);
+  ExpectSendMessage(send::node_management_subscription_call);
+  ExpectSendMessage(send::use_case_data_read);
+  HandleMessage(receive::discovery_response);
+
+  // 3. Receive the Node Management subscription request and send result
+  ExpectSendMessage(send::result_data_msg_cnt_ref_3);
+  HandleMessage(receive::node_management_subscription_request);
+
+  // 4. Receive the use case discovery request and send the reply
+  ExpectSendMessage(send::use_case_data_reply);
+  HandleMessage(receive::use_case_request);
 
   // 5. Receive the result with message counter reference 3
-  HandleMessage(result_data_msg_cnt_ref_3);
-  // 6. Receive the Use Case reply
-  HandleMessage(use_case_reply);
+  HandleMessage(receive::result_data_msg_cnt_ref_3);
+
+  // 6. Receive the Use Case reply and send electrical connection + measurement subscriptions and reads
+  ExpectSendMessage(send::electrical_connection_subscription_call);
+  ExpectSendMessage(send::electrical_connection_description_read);
+  ExpectSendMessage(send::electrical_connection_parameter_description_read);
+  ExpectSendMessage(send::measurement_subscription_call);
+  ExpectSendMessage(send::measurement_description_read);
+  ExpectSendMessage(send::measurement_constraints_read);
+  HandleMessage(receive::use_case_reply);
+
   // 7. Receive the result with message counter reference 5
-  HandleMessage(result_data_msg_cnt_ref_5);
+  HandleMessage(receive::result_data_msg_cnt_ref_5);
+
   // 8. Receive the electrical connection description reply
-  HandleMessage(electrical_connection_description_reply);
+  HandleMessage(receive::electrical_connection_description_reply);
+
   // 9. Receive the electrical connection parameter description reply
-  HandleMessage(electrical_connection_parameter_description_reply);
+  HandleMessage(receive::electrical_connection_parameter_description_reply);
+
   // 10. Receive the result with message counter reference 8
-  HandleMessage(result_data_msg_cnt_ref_8);
-  // 11. Receive the measurement description reply
-  HandleMessage(measurement_description_reply);
+  HandleMessage(receive::result_data_msg_cnt_ref_8);
+
+  // 11. Receive the measurement description reply and send the measurement read
+  ExpectSendMessage(send::measurement_read);
+  HandleMessage(receive::measurement_description_reply);
+
   // 12. Receive the measurement constraints reply
-  HandleMessage(measurement_constraints_reply);
+  HandleMessage(receive::measurement_constraints_reply);
 
   // 13. Receive the measurement reply
-  constexpr ScaledValue power_total_expected = {.value = 33000, .scale = -1};
-  EXPECT_CALL(*ma_mpc_listener_mock_->gmock, OnMeasurementReceive(_, kMpcPowerTotal, ScaledValueMatcher(33000, -1), _))
+  EXPECT_CALL(*ma_mpc_listener_mock_->gmock, OnMeasurementReceive(_, kMpcPowerTotal, ScaledValueEq(33000, -1), _))
       .WillOnce(Return());
 
-  HandleMessage(measurement_reply);
+  HandleMessage(receive::measurement_reply);
 
   // 14. Receive the measurement notify (power)
   const std::map<MuMpcMeasurementNameId, ScaledValue> expected_power{
@@ -154,7 +186,7 @@ TEST_F(MaMpcTestFixture, MaMpcTest) {
   };
 
   ExpectMeasurementsReceive(ma_mpc_listener_mock_->gmock, expected_power);
-  HandleMessage(measurement_notify_power);
+  HandleMessage(receive::measurement_notify_power);
 
   // 15. Receive the measurement notify (energy)
   const std::map<MuMpcMeasurementNameId, ScaledValue> expected_energy{
@@ -163,7 +195,7 @@ TEST_F(MaMpcTestFixture, MaMpcTest) {
   };
 
   ExpectMeasurementsReceive(ma_mpc_listener_mock_->gmock, expected_energy);
-  HandleMessage(measurement_notify_energy);
+  HandleMessage(receive::measurement_notify_energy);
 
   // 16. Receive the measurement notify (current)
   const std::map<MuMpcMeasurementNameId, ScaledValue> expected_current{
@@ -173,7 +205,7 @@ TEST_F(MaMpcTestFixture, MaMpcTest) {
   };
 
   ExpectMeasurementsReceive(ma_mpc_listener_mock_->gmock, expected_current);
-  HandleMessage(measurement_notify_current);
+  HandleMessage(receive::measurement_notify_current);
 
   // 17. Receive the measurement notify (voltage)
   const std::map<MuMpcMeasurementNameId, ScaledValue> expected_voltage{
@@ -186,7 +218,7 @@ TEST_F(MaMpcTestFixture, MaMpcTest) {
   };
 
   ExpectMeasurementsReceive(ma_mpc_listener_mock_->gmock, expected_voltage);
-  HandleMessage(measurement_notify_voltage);
+  HandleMessage(receive::measurement_notify_voltage);
 
   // 18. Receive the measurement notify (frequency)
   const std::map<MuMpcMeasurementNameId, ScaledValue> expected_frequency{
@@ -194,7 +226,7 @@ TEST_F(MaMpcTestFixture, MaMpcTest) {
   };
 
   ExpectMeasurementsReceive(ma_mpc_listener_mock_->gmock, expected_frequency);
-  HandleMessage(measurement_notify_frequency);
+  HandleMessage(receive::measurement_notify_frequency);
 
   // 19. Get all of the measurements received via GetMeasurementData() and check the values
   ScaledValue value;
@@ -213,9 +245,11 @@ TEST_F(MaMpcTestFixture, MaMpcTest) {
 
   for (const auto& [name_id, scaled_value] : expected_data) {
     EXPECT_EQ(MaMpcGetMeasurementData(use_case_.get(), name_id, &remote_entity_addr, &value), kEebusErrorOk);
-    EXPECT_THAT(value, ScaledValueMatcher(scaled_value.value, scaled_value.scale));
+    EXPECT_THAT(&value, ScaledValueEq(scaled_value.value, scaled_value.scale));
   }
 
   // 20. Expect the remote entity disconnect event while tearing down the use case
   EXPECT_CALL(*ma_mpc_listener_mock_->gmock, OnRemoteEntityDisconnect(_, _));
 }
+
+}  // namespace ma_mpc_test

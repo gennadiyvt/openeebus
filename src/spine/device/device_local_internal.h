@@ -27,6 +27,7 @@
 extern "C" {
 #endif  // __cplusplus
 
+void DeviceLocal1sTickCallback(void* ctx);
 EebusError HandleQueueMessage(DeviceLocalObject* self);
 
 #ifdef __cplusplus

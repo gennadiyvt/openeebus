@@ -107,7 +107,6 @@ static EebusError ProcessNotify(FeatureLocal* self, const Message* msg);
 static EebusError ProcessWriteInternal(FeatureLocal* self, const Message* msg);
 static EebusError ProcessWrite(FeatureLocal* self, const Message* msg);
 static EebusError ProcessReply(FeatureLocal* self, const Message* msg);
-static void SendResult(FeatureLocal* self, const Message* msg, EebusError err);
 static void AddPendingWriteRequest(FeatureLocal* self, const Message* msg);
 static PendingWriteRequestObject*
 FindPendingWriteRequest(const FeatureLocal* self, const char* ski, MsgCounterType msg_cnt);
@@ -335,10 +334,14 @@ EebusError FeatureLocalTryApproveWrite(FeatureLocalObject* self, const char* ski
 }
 
 EebusError
-FeatureLocalDenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, EebusError err_num) {
+FeatureLocalDenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, const ErrorType* err) {
   FeatureLocal* const fl = FEATURE_LOCAL(self);
 
   if ((FEATURE_GET_ROLE(FEATURE_OBJECT(self)) != kRoleTypeServer) || (ski == NULL)) {
+    return kEebusErrorInputArgument;
+  }
+
+  if ((err == NULL) || (err->error_number == kErrorNumberTypeNoError)) {
     return kEebusErrorInputArgument;
   }
 
@@ -354,7 +357,7 @@ FeatureLocalDenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType 
     return status;
   }
 
-  SendResult(fl, &msg, err_num);
+  SEND_RESULT_ERROR(MessageGetSender(&msg), msg.request_header, FEATURE_GET_ADDRESS(FEATURE_OBJECT(self)), err);
   VectorRemove(&fl->pending_write_requests, pending_write_request);
   PendingWriteRequestDelete(pending_write_request);
 
@@ -463,7 +466,12 @@ void FeatureLocalUpdatePendingWriteRequestTime(FeatureLocalObject* self) {
         continue;
       }
 
-      SendResult(fl, &msg, kEebusErrorTime);
+      const ErrorType err = {
+          .error_number = kErrorNumberTypeTimeout,
+          .description  = "Write request timed out",
+      };
+
+      SEND_RESULT_ERROR(MessageGetSender(&msg), msg.request_header, FEATURE_GET_ADDRESS(FEATURE_OBJECT(self)), &err);
       VectorRemove(&fl->pending_write_requests, request);
       PendingWriteRequestDelete(request);
     } else {
@@ -780,31 +788,26 @@ EebusError ProcessWriteFunctionData(FeatureLocal* self, const Message* msg) {
   return kEebusErrorOk;
 }
 
-void SendResult(FeatureLocal* self, const Message* msg, EebusError err) {
+EebusError ProcessWriteInternal(FeatureLocal* self, const Message* msg) {
+  if (msg->request_header == NULL) {
+    return kEebusErrorInvalid;
+  }
+
   SenderObject* const sender = MessageGetSender(msg);
 
   const FeatureAddressType* const addr = FEATURE_GET_ADDRESS(FEATURE_OBJECT(self));
 
-  if (err == kEebusErrorOk) {
-    SEND_RESULT_SUCCESS(sender, msg->request_header, addr);
-  } else {
-    const ErrorType err = {
-        .description  = NULL,
+  if (ProcessWriteFunctionData(self, msg) != kEebusErrorOk) {
+    const ErrorType error = {
         .error_number = kErrorNumberTypeGeneralError,
+        .description  = "Error processing write request",
     };
 
-    SEND_RESULT_ERROR(sender, msg->request_header, addr, &err);
-  }
-}
-
-EebusError ProcessWriteInternal(FeatureLocal* self, const Message* msg) {
-  const EebusError err = ProcessWriteFunctionData(self, msg);
-  if (err != kEebusErrorOk) {
-    SendResult(self, msg, err);
-  } else if (msg->request_header != NULL) {
+    SEND_RESULT_ERROR(sender, msg->request_header, addr, &error);
+  } else {
     const bool* const ack_request = msg->request_header->ack_request;
     if ((ack_request != NULL) && (*ack_request)) {
-      SendResult(self, msg, kEebusErrorOk);
+      SEND_RESULT_SUCCESS(sender, msg->request_header, addr);
     }
   }
 

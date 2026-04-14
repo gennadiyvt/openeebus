@@ -76,6 +76,32 @@ void ScaledValuePrint(const char* fmt, const ScaledValue* scaled_value);
  */
 EebusError ScaledValueParse(const char* s, ScaledValue* scaled_value);
 
+/**
+ * @brief Convert Scaled Value to double
+ * @param scaled_value Pointer to Scaled Value to convert
+ * @param value Output: floating-point representation
+ *        scaled_value->value * 10^(scaled_value->scale)
+ * @return kEebusErrorOk on success, kEebusErrorInputArgumentNull if any pointer is NULL,
+ *         kEebusErrorInputArgumentOutOfRange if scaled_value->scale is out of supported range
+ *         (for example, if |scaled_value->scale| > 18)
+ */
+EebusError ScaledValueToDouble(const ScaledValue* scaled_value, double* value);
+
+/**
+ * @brief Initialize Scaled Value from a double using the optimal scale
+ *
+ * Rounds value to the nearest integer multiple of 10^(-4), then strips trailing
+ * decimal zeros to find the most compact scale in the range [-4, 0].
+ *
+ * @param scaled_value Pointer to Scaled Value to initialize
+ * @param value Double value to convert
+ * @return kEebusErrorOk on success, kEebusErrorInputArgumentNull if scaled_value is NULL,
+ *         kEebusErrorInputArgumentOutOfRange if value is NaN, infinite, or if the
+ *         rounded value cannot be represented using a scale in the range [-4, 0]
+ *         within the supported internal numeric range
+ */
+EebusError ScaledValueWithDouble(ScaledValue* scaled_value, double value);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

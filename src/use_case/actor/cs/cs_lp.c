@@ -27,6 +27,7 @@
 #include "src/spine/feature/feature_local.h"
 #include "src/spine/model/loadcontrol_types.h"
 #include "src/spine/model/model.h"
+#include "src/spine/model/result_types.h"
 #include "src/spine/model/usecase_information_types.h"
 #include "src/use_case/actor/cs/cs_lp_events.h"
 #include "src/use_case/actor/cs/cs_lp_internal.h"
@@ -54,12 +55,62 @@ static EebusError CsLpUseCaseConstruct(
     CsLpListenerObject* cs_lp_listener
 );
 
+static void CsLpLoadControlNegativeLimitWriteCallback(const Message* msg, void* ctx) {
+  CsLpUseCase* const self = (CsLpUseCase*)ctx;
+
+  if (msg == NULL || msg->request_header == NULL || msg->request_header->msg_cnt == NULL || msg->cmd == NULL
+      || msg->cmd->data_choice == NULL || msg->device_remote == NULL) {
+    return;
+  }
+
+  FeatureLocalObject* const fl = ENTITY_LOCAL_GET_FEATURE_WITH_TYPE_AND_ROLE(
+      USE_CASE(self)->local_entity,
+      kFeatureTypeTypeLoadControl,
+      kRoleTypeServer
+  );
+
+  if (fl == NULL) {
+    return;
+  }
+
+  const char* const ski        = DEVICE_REMOTE_GET_SKI(msg->device_remote);
+  const MsgCounterType msg_cnt = *msg->request_header->msg_cnt;
+
+  // Ignore if it's not a Load Control Limit List Data write
+  if (msg->cmd->data_choice_type_id != kFunctionTypeLoadControlLimitListData) {
+    FEATURE_LOCAL_TRY_APPROVE_WRITE(fl, ski, msg_cnt);
+    return;
+  }
+
+  const LoadControlLimitListDataType* const limit_list = (const LoadControlLimitListDataType*)msg->cmd->data_choice;
+
+  for (size_t i = 0; i < limit_list->load_control_limit_data_size; ++i) {
+    const LoadControlLimitDataType* const limit = limit_list->load_control_limit_data[i];
+    const ScaledNumberType* const value         = LoadControlLimitGetValue(limit);
+
+    if ((value == NULL) || (value->number == NULL)) {
+      continue;
+    }
+
+    if (*value->number < 0) {
+      const ErrorType err = {
+          .error_number = kErrorNumberTypeCommandRejected,
+          .description  = "Negative limit values are not allowed",
+      };
+      FEATURE_LOCAL_DENY_WRITE(fl, ski, msg_cnt, &err);
+      return;
+    }
+  }
+
+  FEATURE_LOCAL_TRY_APPROVE_WRITE(fl, ski, msg_cnt);
+}
+
 EebusError AddLoadControlFeature(CsLpUseCase* self, EntityLocalObject* entity) {
   FeatureLocalObject* const fl
       = ENTITY_LOCAL_ADD_FEATURE_WITH_TYPE_AND_ROLE(entity, kFeatureTypeTypeLoadControl, kRoleTypeServer);
   FEATURE_LOCAL_SET_FUNCTION_OPERATIONS(fl, kFunctionTypeLoadControlLimitDescriptionListData, true, false);
   FEATURE_LOCAL_SET_FUNCTION_OPERATIONS(fl, kFunctionTypeLoadControlLimitListData, true, true);
-  // TODO: Add write approval callback
+  FEATURE_LOCAL_ADD_WRITE_APPROVAL_CALLBACK(fl, CsLpLoadControlNegativeLimitWriteCallback, self);
 
   LoadControlServer lc;
   EebusError err = LoadControlServerConstruct(&lc, entity);
@@ -95,11 +146,151 @@ EebusError AddLoadControlFeature(CsLpUseCase* self, EntityLocalObject* entity) {
   return kEebusErrorOk;
 }
 
+static const DeviceConfigurationKeyValueDataType* CsLpFindKeyValue(
+    const DeviceConfigurationKeyValueListDataType* data,
+    const DeviceConfigurationCommon* dc_common,
+    DeviceConfigurationKeyNameType key_name
+) {
+  for (size_t i = 0; i < data->device_configuration_key_value_data_size; ++i) {
+    const DeviceConfigurationKeyValueDataType* const kv = data->device_configuration_key_value_data[i];
+    if ((kv == NULL) || (kv->key_id == NULL) || (kv->value == NULL)) {
+      continue;
+    }
+
+    const DeviceConfigurationKeyValueDescriptionDataType* const desc
+        = DeviceConfigurationCommonGetKeyValueDescriptionWithKeyId(dc_common, *kv->key_id);
+    if ((desc == NULL) || (desc->key_name == NULL) || (*desc->key_name != key_name)) {
+      continue;
+    }
+
+    return kv;
+  }
+
+  return NULL;
+}
+
+static void CsLpFailsafeActivePowerLimitWriteCallback(const Message* msg, void* ctx) {
+  CsLpUseCase* const self = (CsLpUseCase*)ctx;
+
+  if (msg == NULL || msg->request_header == NULL || msg->request_header->msg_cnt == NULL || msg->cmd == NULL
+      || msg->cmd->data_choice == NULL || msg->device_remote == NULL) {
+    return;
+  }
+
+  FeatureLocalObject* const fl = ENTITY_LOCAL_GET_FEATURE_WITH_TYPE_AND_ROLE(
+      USE_CASE(self)->local_entity,
+      kFeatureTypeTypeDeviceConfiguration,
+      kRoleTypeServer
+  );
+
+  if (fl == NULL) {
+    return;
+  }
+
+  const char* const ski        = DEVICE_REMOTE_GET_SKI(msg->device_remote);
+  const MsgCounterType msg_cnt = *msg->request_header->msg_cnt;
+
+  if (msg->cmd->data_choice_type_id != kFunctionTypeDeviceConfigurationKeyValueListData) {
+    FEATURE_LOCAL_TRY_APPROVE_WRITE(fl, ski, msg_cnt);
+    return;
+  }
+
+  const DeviceConfigurationKeyValueListDataType* const data
+      = (const DeviceConfigurationKeyValueListDataType*)msg->cmd->data_choice;
+
+  DeviceConfigurationServer dc = {0};
+  if (DeviceConfigurationServerConstruct(&dc, USE_CASE(self)->local_entity) != kEebusErrorOk) {
+    const ErrorType err = {
+        .error_number = kErrorNumberTypeCommandRejected,
+        .description  = "Internal error: command rejected",
+    };
+    FEATURE_LOCAL_DENY_WRITE(fl, ski, msg_cnt, &err);
+    return;
+  }
+
+  const DeviceConfigurationKeyValueDataType* const kv
+      = CsLpFindKeyValue(data, &dc.device_cfg_common, self->failsafe_power_limit_key);
+
+  if ((kv != NULL) && (kv->value->scaled_number != NULL) && (kv->value->scaled_number->number != NULL)
+      && (*kv->value->scaled_number->number < 0)) {
+    const ErrorType err = {
+        .error_number = kErrorNumberTypeCommandRejected,
+        .description  = "Negative failsafe power limit values are not allowed",
+    };
+    FEATURE_LOCAL_DENY_WRITE(fl, ski, msg_cnt, &err);
+    return;
+  }
+
+  FEATURE_LOCAL_TRY_APPROVE_WRITE(fl, ski, msg_cnt);
+}
+
+static void CsLpFailsafeDurationMinimumWriteCallback(const Message* msg, void* ctx) {
+  CsLpUseCase* const self = (CsLpUseCase*)ctx;
+
+  if (msg == NULL || msg->request_header == NULL || msg->request_header->msg_cnt == NULL || msg->cmd == NULL
+      || msg->cmd->data_choice == NULL || msg->device_remote == NULL) {
+    return;
+  }
+
+  FeatureLocalObject* const fl = ENTITY_LOCAL_GET_FEATURE_WITH_TYPE_AND_ROLE(
+      USE_CASE(self)->local_entity,
+      kFeatureTypeTypeDeviceConfiguration,
+      kRoleTypeServer
+  );
+
+  if (fl == NULL) {
+    return;
+  }
+
+  const char* const ski        = DEVICE_REMOTE_GET_SKI(msg->device_remote);
+  const MsgCounterType msg_cnt = *msg->request_header->msg_cnt;
+
+  // Ignore if it is not a Device Configuration Key Value List Data write
+  if (msg->cmd->data_choice_type_id != kFunctionTypeDeviceConfigurationKeyValueListData) {
+    FEATURE_LOCAL_TRY_APPROVE_WRITE(fl, ski, msg_cnt);
+    return;
+  }
+
+  DeviceConfigurationServer dc = {0};
+  if (DeviceConfigurationServerConstruct(&dc, USE_CASE(self)->local_entity) != kEebusErrorOk) {
+    const ErrorType err = {
+        .error_number = kErrorNumberTypeCommandRejected,
+        .description  = "Internal error: command rejected",
+    };
+    FEATURE_LOCAL_DENY_WRITE(fl, ski, msg_cnt, &err);
+    return;
+  }
+
+  const DeviceConfigurationKeyValueDataType* const kv = CsLpFindKeyValue(
+      (const DeviceConfigurationKeyValueListDataType*)msg->cmd->data_choice,
+      &dc.device_cfg_common,
+      kDeviceConfigurationKeyNameTypeFailsafeDurationMinimum
+  );
+
+  if ((kv != NULL) && (kv->value->duration != NULL)) {
+    const int64_t total_seconds = EebusDurationToSeconds(kv->value->duration);
+
+    // The failsafe duration minimum should be between 2 hours and 24 hours
+    if (total_seconds < (2 * 3600) || total_seconds > (24 * 3600)) {
+      const ErrorType err = {
+          .error_number = kErrorNumberTypeCommandRejected,
+          .description  = "Invalid failsafe duration minimum value: should be between 2 hours and 24 hours",
+      };
+      FEATURE_LOCAL_DENY_WRITE(fl, ski, msg_cnt, &err);
+      return;
+    }
+  }
+
+  FEATURE_LOCAL_TRY_APPROVE_WRITE(fl, ski, msg_cnt);
+}
+
 EebusError AddDeviceConfigurationFeature(CsLpUseCase* self, EntityLocalObject* entity) {
   FeatureLocalObject* const fl
       = ENTITY_LOCAL_ADD_FEATURE_WITH_TYPE_AND_ROLE(entity, kFeatureTypeTypeDeviceConfiguration, kRoleTypeServer);
   FEATURE_LOCAL_SET_FUNCTION_OPERATIONS(fl, kFunctionTypeDeviceConfigurationKeyValueDescriptionListData, true, false);
   FEATURE_LOCAL_SET_FUNCTION_OPERATIONS(fl, kFunctionTypeDeviceConfigurationKeyValueListData, true, true);
+  FEATURE_LOCAL_ADD_WRITE_APPROVAL_CALLBACK(fl, CsLpFailsafeActivePowerLimitWriteCallback, self);
+  FEATURE_LOCAL_ADD_WRITE_APPROVAL_CALLBACK(fl, CsLpFailsafeDurationMinimumWriteCallback, self);
 
   DeviceConfigurationServer dcs;
   EebusError err = DeviceConfigurationServerConstruct(&dcs, entity);

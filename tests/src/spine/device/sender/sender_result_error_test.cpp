@@ -63,7 +63,7 @@ TEST_P(SenderResultErrorTests, SenderResultErrorTests) {
       .msg_cnt   = const_cast<uint64_t*>(GetParam().request_header_msg_cnt.get()),
   };
 
-  ErrorType err = {
+  const ErrorType err = {
       .error_number = GetParam().err_number,
       .description  = (const char*)GetParam().err_description,
   };

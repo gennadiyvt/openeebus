@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#ifndef TESTS_SRC_USE_CASE_USE_CASE_TEST_FIXTURE_H
+#define TESTS_SRC_USE_CASE_USE_CASE_TEST_FIXTURE_H
+
 #include <memory>
 
 #include <gtest/gtest.h>
@@ -20,6 +24,7 @@
 #include "mocks/common/eebus_timer/eebus_timer_mock.h"
 #include "mocks/ship/ship_connection/data_writer_mock.h"
 #include "src/spine/device/device_local.h"
+#include "tests/src/use_case/matchers.h"
 
 class UseCaseTestFixture : public ::testing::Test {
  public:
@@ -45,6 +50,12 @@ class UseCaseTestFixture : public ::testing::Test {
 
   virtual void SetUpUseCase()    = 0;
   virtual void TearDownUseCase() = 0;
+  bool IsLogMessagesEnabled() const {
+    return log_messages_;
+  }
+  static void LogMessageSend(const uint8_t* msg, size_t msg_size);
+  void ExpectSendMessage(const char* expected_json);
+  void HandleTick();
   void HandleMessage(const char* msg);
 
  private:
@@ -55,3 +66,5 @@ class UseCaseTestFixture : public ::testing::Test {
   bool log_messages_{false};
   std::unique_ptr<EebusDeviceInfo, decltype(&EebusDeviceInfoDelete)> device_info_{nullptr, EebusDeviceInfoDelete};
 };
+
+#endif  // TESTS_SRC_USE_CASE_USE_CASE_TEST_FIXTURE_H

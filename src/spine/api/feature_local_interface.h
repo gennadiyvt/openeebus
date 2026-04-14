@@ -82,7 +82,7 @@ struct FeatureLocalInterface {
   void (*add_result_callback)(FeatureLocalObject* self, ResponseMessageCallback cb, void* ctx);
   EebusError (*add_write_approval_callback)(FeatureLocalObject* self, WriteApprovalCallback cb, void* ctx);
   EebusError (*try_approve_write)(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt);
-  EebusError (*deny_write)(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, EebusError err_num);
+  EebusError (*deny_write)(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, const ErrorType* err);
   void (*clean_remote_device_caches)(FeatureLocalObject* self, const DeviceAddressType* remote_addr);
   void* (*data_copy)(const FeatureLocalObject* self, FunctionType function_type);
   EebusError (*update_data)(
@@ -185,8 +185,8 @@ struct FeatureLocalObject {
 /**
  * @brief Feature Local Deny Write caller definition
  */
-#define FEATURE_LOCAL_DENY_WRITE(obj, ski, msg_cnt, err_num) \
-  (FEATURE_LOCAL_INTERFACE(obj)->deny_write(obj, ski, msg_cnt, err_num))
+#define FEATURE_LOCAL_DENY_WRITE(obj, ski, msg_cnt, err) \
+  (FEATURE_LOCAL_INTERFACE(obj)->deny_write(obj, ski, msg_cnt, err))
 
 /**
  * @brief Feature Local Clean Remote Device Caches caller definition

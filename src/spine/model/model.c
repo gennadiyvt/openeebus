@@ -69,6 +69,10 @@ const EebusDataCfg* ModelGetDatagramCfg(void) {
   return &datagram_data_cfg;
 }
 
+const EebusDataCfg* ModelGetDatagramHeaderCfg(void) {
+  return datagram_header_data_cfg;
+}
+
 const EebusDataCfg* ModelGetFeatureAddressCfg(void) {
   return feature_address_cfg;
 }

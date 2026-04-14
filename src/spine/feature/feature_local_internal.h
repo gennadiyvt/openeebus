@@ -73,7 +73,8 @@ EebusError FeatureLocalAddResponseCallback(
 void FeatureLocalAddResultCallback(FeatureLocalObject* self, ResponseMessageCallback cb, void* ctx);
 EebusError FeatureLocalAddWriteApprovalCallback(FeatureLocalObject* self, WriteApprovalCallback cb, void* ctx);
 EebusError FeatureLocalTryApproveWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt);
-EebusError FeatureLocalDenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, EebusError err_num);
+EebusError
+FeatureLocalDenyWrite(FeatureLocalObject* self, const char* ski, MsgCounterType msg_cnt, const ErrorType* err);
 void FeatureLocalCleanRemoteDeviceCaches(FeatureLocalObject* self, const DeviceAddressType* remote_addr);
 void* FeatureLocalDataCopy(const FeatureLocalObject* self, FunctionType function_type);
 EebusError FeatureLocalUpdateData(

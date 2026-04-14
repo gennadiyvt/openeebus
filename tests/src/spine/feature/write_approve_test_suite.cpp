@@ -16,6 +16,7 @@
 
 #include "tests/src/spine/feature/write_approve_test_suite.h"
 #include "src/common/api/eebus_timer_interface.h"
+#include "src/spine/model/result_types.h"
 #include "tests/src/memory_leak.inc"
 
 constexpr uint8_t kMaxResponseTimeSec = TIME_MS_TO_S(kDefaultMaxResponseDelayMs);
@@ -198,7 +199,11 @@ void DenyWriteRequestCallback(const Message* msg, void* ctx) {
   EXPECT_EQ(VectorGetSize(&feature_local->pending_write_requests), 1);
 
   // Deny write request
-  EebusError ret = FEATURE_LOCAL_DENY_WRITE(FEATURE_LOCAL_OBJECT(ctx), ski, msg_cnt, kEebusErrorActivate);
+  const ErrorType err = {
+      .error_number = kErrorNumberTypeCommandRejected,
+      .description  = "Write request denied by user",
+  };
+  EebusError ret = FEATURE_LOCAL_DENY_WRITE(FEATURE_LOCAL_OBJECT(ctx), ski, msg_cnt, &err);
   EXPECT_EQ(ret, kEebusErrorOk);
 }
 
@@ -231,7 +236,11 @@ void DenyShouldPass(const Message* msg, void* ctx) {
 
   MsgCounterType msg_cnt = *msg->request_header->msg_cnt;
 
-  EebusError ret = FEATURE_LOCAL_DENY_WRITE(FEATURE_LOCAL_OBJECT(ctx), ski, msg_cnt, kEebusErrorActivate);
+  const ErrorType err = {
+      .error_number = kErrorNumberTypeCommandRejected,
+      .description  = "Write request denied by user",
+  };
+  EebusError ret = FEATURE_LOCAL_DENY_WRITE(FEATURE_LOCAL_OBJECT(ctx), ski, msg_cnt, &err);
   EXPECT_EQ(ret, kEebusErrorOk);
 }
 
@@ -242,6 +251,10 @@ void DenyShouldFail(const Message* msg, void* ctx) {
 
   MsgCounterType msg_cnt = *msg->request_header->msg_cnt;
 
-  EebusError ret = FEATURE_LOCAL_DENY_WRITE(FEATURE_LOCAL_OBJECT(ctx), ski, msg_cnt, kEebusErrorActivate);
+  const ErrorType err = {
+      .error_number = kErrorNumberTypeCommandRejected,
+      .description  = "Write request denied by user",
+  };
+  EebusError ret = FEATURE_LOCAL_DENY_WRITE(FEATURE_LOCAL_OBJECT(ctx), ski, msg_cnt, &err);
   EXPECT_EQ(ret, kEebusErrorNoChange);
 }

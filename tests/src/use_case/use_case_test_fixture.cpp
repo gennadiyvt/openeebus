@@ -27,6 +27,7 @@
 #include "tests/src/use_case/use_case_test_fixture.h"
 
 using testing::_;
+using testing::Args;
 using testing::Invoke;
 using testing::Return;
 using testing::WithArgs;
@@ -42,11 +43,11 @@ void LogMessage(const char* direction, const uint8_t* msg, size_t msg_size) {
   auto ms   = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
   std::cout << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S") << "." << std::setfill('0') << std::setw(3)
             << ms.count() << " " << direction << " ";
-  std::string_view s(reinterpret_cast<const char*>(msg));
+  std::string_view s(reinterpret_cast<const char*>(msg), msg_size);
   std::cout << s << std::endl;
 }
 
-void LogMessageSend(const uint8_t* msg, size_t msg_size) {
+void UseCaseTestFixture::LogMessageSend(const uint8_t* msg, size_t msg_size) {
   LogMessage("Send message", msg, msg_size);
 }
 
@@ -56,13 +57,6 @@ void UseCaseTestFixture::SetUp() {
 
   // Create entities, setup use cases and entities to the SPINE device
   SetUpUseCase();
-
-  // Setup the Data Reader and expecte send the detailed discovery request
-  if (log_messages_ == kUseCaseLogMessagesEnabled) {
-    EXPECT_CALL(*data_write_mock_->gmock, WriteMessage(_, _, _)).WillRepeatedly(WithArgs<1, 2>(Invoke(LogMessageSend)));
-  } else {
-    EXPECT_CALL(*data_write_mock_->gmock, WriteMessage(_, _, _)).WillRepeatedly(Return());
-  }
 
   data_reader_
       = DEVICE_LOCAL_SETUP_REMOTE_DEVICE(device_local_.get(), kRemoteSki, DATA_WRITER_OBJECT(data_write_mock_.get()));
@@ -80,6 +74,23 @@ void UseCaseTestFixture::TearDown() {
 
   EXPECT_EQ(heap_used, 0);
   CheckForMemoryLeaks();
+}
+
+void UseCaseTestFixture::ExpectSendMessage(const char* expected_json) {
+  if (log_messages_ == kUseCaseLogMessagesEnabled) {
+    EXPECT_CALL(*data_write_mock_->gmock, WriteMessage(_, _, _))
+        .With(Args<1, 2>(JsonMsgEq(expected_json)))
+        .WillOnce(WithArgs<1, 2>(Invoke(LogMessageSend)));
+  } else {
+    EXPECT_CALL(*data_write_mock_->gmock, WriteMessage(_, _, _))
+        .With(Args<1, 2>(JsonMsgEq(expected_json)))
+        .WillOnce(Return());
+  }
+}
+
+void UseCaseTestFixture::HandleTick() {
+  DeviceLocal1sTickCallback(device_local_.get());
+  EXPECT_EQ(HandleQueueMessage(device_local_.get()), kEebusErrorOk);
 }
 
 void UseCaseTestFixture::HandleMessage(const char* msg_string) {

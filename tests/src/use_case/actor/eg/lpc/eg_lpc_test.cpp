@@ -19,7 +19,7 @@
  * @note Remember to enable the message printing in PrintMessage() before getting started
  */
 
-#include "src/spine/device/device_local.h"
+#include "src/use_case/actor/eg/lpc/eg_lpc.h"
 
 #include <gtest/gtest.h>
 
@@ -35,24 +35,42 @@
 #include "src/spine/device/device_local.h"
 #include "src/spine/device/device_local_internal.h"
 #include "src/spine/entity/entity_local.h"
-#include "src/use_case/actor/eg/lpc/eg_lpc.h"
 #include "tests/src/json.h"
-#include "tests/src/use_case/actor/eg/lpc/device_diagnosis_heartbeat_request.inc"
-#include "tests/src/use_case/actor/eg/lpc/device_diagnosis_subscription_request.inc"
-#include "tests/src/use_case/actor/eg/lpc/discovery_request.inc"
-#include "tests/src/use_case/actor/eg/lpc/discovery_response.inc"
-#include "tests/src/use_case/actor/eg/lpc/limits_description_reply.inc"
-#include "tests/src/use_case/actor/eg/lpc/limits_reply.inc"
-#include "tests/src/use_case/actor/eg/lpc/node_management_subscription_request.inc"
-#include "tests/src/use_case/actor/eg/lpc/result_data_msg_cnt_ref_11.inc"
-#include "tests/src/use_case/actor/eg/lpc/result_data_msg_cnt_ref_3.inc"
-#include "tests/src/use_case/actor/eg/lpc/result_data_msg_cnt_ref_5.inc"
-#include "tests/src/use_case/actor/eg/lpc/result_data_msg_cnt_ref_6.inc"
-#include "tests/src/use_case/actor/eg/lpc/result_data_msg_cnt_ref_8.inc"
-#include "tests/src/use_case/actor/eg/lpc/result_data_msg_cnt_ref_9.inc"
-#include "tests/src/use_case/actor/eg/lpc/use_case_reply.inc"
-#include "tests/src/use_case/actor/eg/lpc/use_case_request.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/device_diagnosis_heartbeat_request.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/device_diagnosis_subscription_request.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/discovery_request.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/discovery_response.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/limits_description_reply.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/limits_reply.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/node_management_subscription_request.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/result_data_msg_cnt_ref_11.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/result_data_msg_cnt_ref_3.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/result_data_msg_cnt_ref_5.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/result_data_msg_cnt_ref_6.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/result_data_msg_cnt_ref_8.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/result_data_msg_cnt_ref_9.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/use_case_reply.inc"
+#include "tests/src/use_case/actor/eg/lpc/receive/use_case_request.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/device_configuration_binding_call.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/device_configuration_description_read.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/device_configuration_subscription_call.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/device_diagnosis_heartbeat_read.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/device_diagnosis_heartbeat_reply.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/device_diagnosis_subscription_call.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/discovery_read.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/discovery_reply.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/load_control_binding_call.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/load_control_limit_description_read.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/load_control_limit_list_read.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/load_control_subscription_call.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/node_management_subscription_call.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/result_data_msg_cnt_ref_28.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/result_data_msg_cnt_ref_31.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/use_case_data_read.inc"
+#include "tests/src/use_case/actor/eg/lpc/send/use_case_data_reply.inc"
 #include "tests/src/use_case/use_case_test_fixture.h"
+
+namespace eg_lpc_test {
 
 using testing::_;
 using testing::Invoke;
@@ -62,8 +80,9 @@ using testing::WithArgs;
 class EgLpcTestFixture : public UseCaseTestFixture {
  public:
   EgLpcTestFixture() : UseCaseTestFixture("HEMS", "HEMS", "123456789") {};
+
   void SetUpUseCase() override {
-    uint32_t entity_ids[1] = {static_cast<uint32_t>(VectorGetSize(DEVICE_LOCAL_GET_ENTITIES(device_local_.get())))};
+    uint32_t entity_ids[1]{static_cast<uint32_t>(VectorGetSize(DEVICE_LOCAL_GET_ENTITIES(device_local_.get())))};
 
     EntityLocalObject* const entity = EntityLocalCreate(
         device_local_.get(),
@@ -77,6 +96,8 @@ class EgLpcTestFixture : public UseCaseTestFixture {
     use_case_.reset(EgLpcUseCaseCreate(entity, EG_LP_LISTENER_OBJECT(eg_lpc_listener_mock_.get())));
 
     DEVICE_LOCAL_ADD_ENTITY(device_local_.get(), entity);
+
+    ExpectSendMessage(send::discovery_read);
   };
 
   void TearDownUseCase() override {
@@ -84,6 +105,15 @@ class EgLpcTestFixture : public UseCaseTestFixture {
     use_case_.reset();
     eg_lpc_listener_mock_.reset();
   };
+
+  void ExpectSendHeartbeat(const char* expected_json) {
+    if (IsLogMessagesEnabled()) {
+      EXPECT_CALL(*data_write_mock_->gmock, WriteMessage(_, HeartbeatMsgEq(expected_json), _))
+          .WillOnce(WithArgs<1, 2>(Invoke(LogMessageSend)));
+    } else {
+      EXPECT_CALL(*data_write_mock_->gmock, WriteMessage(_, HeartbeatMsgEq(expected_json), _)).WillOnce(Return());
+    }
+  }
 
  protected:
   std::unique_ptr<EgLpListenerMock, decltype(&EgLpListenerMockDelete)> eg_lpc_listener_mock_{
@@ -96,44 +126,66 @@ class EgLpcTestFixture : public UseCaseTestFixture {
 
 TEST_F(EgLpcTestFixture, EgLpcTest) {
   // 1. Receive the detailed discovery request and send the response
-  HandleMessage(discovery_request);
-  // 2. Receive the detailed discovery and send the response
-  EXPECT_CALL(*eg_lpc_listener_mock_->gmock, OnRemoteEntityConnect(_, _)).WillOnce(Return());
-  HandleMessage(discovery_response);
-  // 3. Receive the result with message counter reference 5
-  HandleMessage(result_data_msg_cnt_ref_5);
-  // 4. Receive the result with message counter reference 6
-  HandleMessage(result_data_msg_cnt_ref_6);
-  // 5. Receive the result with message counter reference 8
-  HandleMessage(result_data_msg_cnt_ref_8);
-  // 6. Receive the result with message counter reference 9
-  HandleMessage(result_data_msg_cnt_ref_9);
-  // 7. Receive the result with message counter reference 11
-  HandleMessage(result_data_msg_cnt_ref_11);
-  // 8. Receive the Node Management subscription request
-  HandleMessage(node_management_subscription_request);
-  // 9. Received the usecase discovery and send the response
-  HandleMessage(use_case_request);
-  // 10. Receive the Use Case reply
-  HandleMessage(use_case_reply);
+  ExpectSendMessage(send::discovery_reply);
+  HandleMessage(receive::discovery_request);
 
-  // 11. Receive the Device Diagnosis subscription request
-  HandleMessage(device_diagnosis_subscription_request);
-  // 12. Receive the Heartbeat subscription request
-  HandleMessage(device_diagnosis_heartbeat_request);
+  // 2. Receive the detailed discovery response and send subscription call + use case read
+  EXPECT_CALL(*eg_lpc_listener_mock_->gmock, OnRemoteEntityConnect(_, _)).WillOnce(Return());
+  ExpectSendMessage(send::node_management_subscription_call);
+  ExpectSendMessage(send::use_case_data_read);
+  HandleMessage(receive::discovery_response);
+
+  // 3. Receive the result with message counter reference 5
+  HandleMessage(receive::result_data_msg_cnt_ref_5);
+  // 4. Receive the result with message counter reference 6
+  HandleMessage(receive::result_data_msg_cnt_ref_6);
+  // 5. Receive the result with message counter reference 8
+  HandleMessage(receive::result_data_msg_cnt_ref_8);
+  // 6. Receive the result with message counter reference 9
+  HandleMessage(receive::result_data_msg_cnt_ref_9);
+  // 7. Receive the result with message counter reference 11
+  HandleMessage(receive::result_data_msg_cnt_ref_11);
+
+  // 8. Receive the Node Management subscription request and send result
+  ExpectSendMessage(send::result_data_msg_cnt_ref_28);
+  HandleMessage(receive::node_management_subscription_request);
+
+  // 9. Receive the use case discovery request and send the reply
+  ExpectSendMessage(send::use_case_data_reply);
+  HandleMessage(receive::use_case_request);
+
+  // 10. Receive the Use Case reply and send load control + device configuration + device diagnosis subscriptions
+  ExpectSendMessage(send::load_control_subscription_call);
+  ExpectSendMessage(send::load_control_binding_call);
+  ExpectSendMessage(send::load_control_limit_description_read);
+  ExpectSendMessage(send::device_configuration_subscription_call);
+  ExpectSendMessage(send::device_configuration_binding_call);
+  ExpectSendMessage(send::device_configuration_description_read);
+  ExpectSendMessage(send::device_diagnosis_subscription_call);
+  ExpectSendMessage(send::device_diagnosis_heartbeat_read);
+  HandleMessage(receive::use_case_reply);
+
+  // 11. Receive the Device Diagnosis subscription request and send result
+  ExpectSendMessage(send::result_data_msg_cnt_ref_31);
+  HandleMessage(receive::device_diagnosis_subscription_request);
+
+  // 12. Receive the Heartbeat read request and send the reply
+  ExpectSendHeartbeat(send::device_diagnosis_heartbeat_reply);
+  HandleMessage(receive::device_diagnosis_heartbeat_request);
+
   // 13. Receive the result with message counter reference 3
-  HandleMessage(result_data_msg_cnt_ref_3);
-  // 14. Receive the Load Control Limit Description reply
-  HandleMessage(limits_description_reply);
+  HandleMessage(receive::result_data_msg_cnt_ref_3);
+
+  // 14. Receive the Load Control Limit Description reply and send the read
+  ExpectSendMessage(send::load_control_limit_list_read);
+  HandleMessage(receive::limits_description_reply);
+
   // 15. Receive the Load Control Limit reply
-  EXPECT_CALL(*eg_lpc_listener_mock_->gmock, OnPowerLimitReceive(_, _, _, _))
-      .WillOnce(WithArgs<1, 2, 3>(Invoke([](const ScaledValue* value, const DurationType* duration, bool is_active) {
-        ASSERT_NE(value, nullptr);
-        EXPECT_EQ(value->value, 4200);
-        EXPECT_EQ(value->scale, 0);
-        EXPECT_EQ(is_active, false);
-      })));
-  HandleMessage(limits_reply);
+  EXPECT_CALL(*eg_lpc_listener_mock_->gmock, OnPowerLimitReceive(_, ScaledValueEq(4200, 0), _, false));
+  HandleMessage(receive::limits_reply);
+
   // 16. Expect the remote entity disconnect event while tearing down the use case
   EXPECT_CALL(*eg_lpc_listener_mock_->gmock, OnRemoteEntityDisconnect(_, _));
 }
+
+}  // namespace eg_lpc_test

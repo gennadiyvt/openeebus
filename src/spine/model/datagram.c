@@ -72,3 +72,8 @@ DatagramType* DatagramCopy(const DatagramType* datagram) {
   EEBUS_DATA_COPY(ModelGetDatagramCfg(), &datagram, &datagram_copy);
   return datagram_copy;
 }
+
+bool DatagramHeaderCompare(const HeaderType* header_a, const HeaderType* header_b) {
+  const EebusDataCfg cfg = EEBUS_DATA_SEQUENCE_TMP(HeaderType, ModelGetDatagramHeaderCfg());
+  return EEBUS_DATA_COMPARE(&cfg, &header_a, &cfg, &header_b);
+}

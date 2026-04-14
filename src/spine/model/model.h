@@ -35,6 +35,7 @@ extern "C" {
  * @{
  */
 const EebusDataCfg* ModelGetDatagramCfg(void);
+const EebusDataCfg* ModelGetDatagramHeaderCfg(void);
 const EebusDataCfg* ModelGetHeaderCfg(void);
 const EebusDataCfg* ModelGetFeatureAddressCfg(void);
 const EebusDataCfg* ModelGetEntityAddressCfg(void);

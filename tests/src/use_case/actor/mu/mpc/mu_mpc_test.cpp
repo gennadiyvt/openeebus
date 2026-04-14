@@ -35,30 +35,42 @@
 #include "src/spine/device/device_local_internal.h"
 #include "src/spine/entity/entity_local.h"
 #include "tests/src/json.h"
-#include "tests/src/use_case/actor/mu/mpc/discovery_request.inc"
-#include "tests/src/use_case/actor/mu/mpc/discovery_response.inc"
-#include "tests/src/use_case/actor/mu/mpc/electrical_connection_parameter_description_request.inc"
-#include "tests/src/use_case/actor/mu/mpc/electrical_connection_request.inc"
-#include "tests/src/use_case/actor/mu/mpc/electrical_connection_subscription_request.inc"
-#include "tests/src/use_case/actor/mu/mpc/measurement_constraints_request.inc"
-#include "tests/src/use_case/actor/mu/mpc/measurement_description_request.inc"
-#include "tests/src/use_case/actor/mu/mpc/measurement_subscription_request.inc"
-#include "tests/src/use_case/actor/mu/mpc/node_management_subscription_request.inc"
-#include "tests/src/use_case/actor/mu/mpc/result_data_msg_cnt_ref_3.inc"
-#include "tests/src/use_case/actor/mu/mpc/use_case_reply.inc"
-#include "tests/src/use_case/actor/mu/mpc/use_case_request.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/discovery_request.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/discovery_response.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/electrical_connection_parameter_description_request.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/electrical_connection_request.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/electrical_connection_subscription_request.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/measurement_constraints_request.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/measurement_description_request.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/measurement_subscription_request.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/node_management_subscription_request.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/result_data_msg_cnt_ref_3.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/use_case_reply.inc"
+#include "tests/src/use_case/actor/mu/mpc/receive/use_case_request.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/discovery_read.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/discovery_reply.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/electrical_connection_description_reply.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/electrical_connection_parameter_description_reply.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/measurement_constraints_reply.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/measurement_description_reply.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/node_management_subscription_call.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/result_data_msg_cnt_ref_3.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/result_data_msg_cnt_ref_5.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/result_data_msg_cnt_ref_8.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/use_case_data_read.inc"
+#include "tests/src/use_case/actor/mu/mpc/send/use_case_data_reply.inc"
 #include "tests/src/use_case/use_case_test_fixture.h"
 
 using testing::_;
-using testing::Invoke;
 using testing::Return;
-using testing::WithArgs;
+
+namespace mu_mpc_test {
 
 class MuMpcTestFixture : public UseCaseTestFixture {
  public:
   MuMpcTestFixture() : UseCaseTestFixture("HeatPump", "HeatPump", "123456789") {};
   void SetUpUseCase() override {
-    uint32_t entity_ids[1] = {static_cast<uint32_t>(VectorGetSize(DEVICE_LOCAL_GET_ENTITIES(device_local_.get())))};
+    uint32_t entity_ids[1]{static_cast<uint32_t>(VectorGetSize(DEVICE_LOCAL_GET_ENTITIES(device_local_.get())))};
 
     EntityLocalObject* const entity = EntityLocalCreate(
         device_local_.get(),
@@ -131,6 +143,8 @@ class MuMpcTestFixture : public UseCaseTestFixture {
     MuMpcUpdate(use_case_.get());
 
     DEVICE_LOCAL_ADD_ENTITY(device_local_.get(), entity);
+
+    ExpectSendMessage(send::discovery_read);
   }
 
   void TearDownUseCase() override {
@@ -143,7 +157,7 @@ class MuMpcTestFixture : public UseCaseTestFixture {
 
 TEST_F(MuMpcTestFixture, MuMpcTest) {
   // 1. Check that assigned while SetUpUseCase values are correctly set
-  ScaledValue value = {0};
+  ScaledValue value{0};
   EXPECT_EQ(MuMpcGetMeasurementData(use_case_.get(), kMpcPowerTotal, &value), kEebusErrorOk);
   EXPECT_EQ(value.value, 1000);
   EXPECT_EQ(value.scale, 0);
@@ -157,27 +171,51 @@ TEST_F(MuMpcTestFixture, MuMpcTest) {
   EXPECT_EQ(value.scale, 0);
 
   // 2. Receive the detailed discovery request and send the response
-  HandleMessage(discovery_request);
-  // 3. Receive the detailed discovery and send the response
-  HandleMessage(discovery_response);
-  // 4. Receive the Node Management dubscription request
-  HandleMessage(node_management_subscription_request);
-  // 5. Receive the use case discovery and send the response
-  HandleMessage(use_case_request);
-  // 6. Receive the electrical conncetion subscription request and send the response
-  HandleMessage(electrical_connection_subscription_request);
+  ExpectSendMessage(send::discovery_reply);
+  HandleMessage(receive::discovery_request);
+
+  // 3. Receive the detailed discovery response and send subscriptions + use case read
+  ExpectSendMessage(send::node_management_subscription_call);
+  ExpectSendMessage(send::use_case_data_read);
+  HandleMessage(receive::discovery_response);
+
+  // 4. Receive the Node Management subscription request and send result
+  ExpectSendMessage(send::result_data_msg_cnt_ref_3);
+  HandleMessage(receive::node_management_subscription_request);
+
+  // 5. Receive the use case discovery request and send the reply
+  ExpectSendMessage(send::use_case_data_reply);
+  HandleMessage(receive::use_case_request);
+
+  // 6. Receive the electrical connection subscription request and send result
+  ExpectSendMessage(send::result_data_msg_cnt_ref_5);
+  HandleMessage(receive::electrical_connection_subscription_request);
+
   // 7. Receive the electrical connection read request and send the response
-  HandleMessage(electrical_connection_request);
+  ExpectSendMessage(send::electrical_connection_description_reply);
+  HandleMessage(receive::electrical_connection_request);
+
   // 8. Receive the electrical connection parameter description request and send the response
-  HandleMessage(electrical_connection_parameter_description_request);
-  // 9. Receive the measurement subscription request and send the response
-  HandleMessage(measurement_subscription_request);
-  // 10. Receive the measurement description request request
-  HandleMessage(measurement_description_request);
-  // 11. Receive the measurement constraints request request and send the response
-  HandleMessage(measurement_constraints_request);
+  ExpectSendMessage(send::electrical_connection_parameter_description_reply);
+  HandleMessage(receive::electrical_connection_parameter_description_request);
+
+  // 9. Receive the measurement subscription request and send result
+  ExpectSendMessage(send::result_data_msg_cnt_ref_8);
+  HandleMessage(receive::measurement_subscription_request);
+
+  // 10. Receive the measurement description request and send the response
+  ExpectSendMessage(send::measurement_description_reply);
+  HandleMessage(receive::measurement_description_request);
+
+  // 11. Receive the measurement constraints request and send the response
+  ExpectSendMessage(send::measurement_constraints_reply);
+  HandleMessage(receive::measurement_constraints_request);
+
   // 12. Receive the result with message counter reference 3
-  HandleMessage(result_data_msg_cnt_ref_3);
+  HandleMessage(receive::result_data_msg_cnt_ref_3);
+
   // 13. Receive the Use Case reply
-  HandleMessage(use_case_reply);
+  HandleMessage(receive::use_case_reply);
 }
+
+}  // namespace mu_mpc_test
