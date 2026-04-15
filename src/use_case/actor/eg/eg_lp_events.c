@@ -183,13 +183,7 @@ void OnLoadControlLimitDataUpdate(EgLpUseCase* self, const EventPayload* payload
   EebusError ret = EgLpGetActivePowerLimitInternal(self, entity_addr, &limit);
   if (ret == kEebusErrorOk) {
     const DurationType* duration = limit.delete_duration ? NULL : &limit.duration;
-    EG_LP_LISTENER_ON_POWER_LIMIT_RECEIVE(
-        self->eg_lp_listener,
-        entity_addr,
-        &limit.value,
-        duration,
-        limit.is_active
-    );
+    EG_LP_LISTENER_ON_POWER_LIMIT_RECEIVE(self->eg_lp_listener, entity_addr, &limit.value, duration, limit.is_active);
   }
 }
 
