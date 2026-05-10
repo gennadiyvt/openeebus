@@ -38,6 +38,8 @@ struct EebusCli {
 
   /** CS LPC CLI instance to deal with */
   EebusCliHandlerObject* cs_lpc_cli;
+  /** CS LPP CLI instance to deal with */
+  EebusCliHandlerObject* cs_lpp_cli;
   /** EG LPC CLI instance to deal with */
   EebusCliHandlerObject* eg_lpc_cli;
   /** EG LPP CLI instance to deal with */
@@ -52,6 +54,7 @@ struct EebusCli {
 
 static void Destruct(EebusCliObject* self);
 static void SetCsLpc(EebusCliObject* self, CsLpUseCaseObject* cs_lpc_use_case);
+static void SetCsLpp(EebusCliObject* self, CsLpUseCaseObject* cs_lpp_use_case);
 static void
 SetEgLpc(EebusCliObject* self, EgLpUseCaseObject* eg_lpc_use_case, const EntityAddressType* remote_entity_address);
 static void SetMuMpc(EebusCliObject* self, MuMpcUseCaseObject* mu_mpc_use_case);
@@ -64,6 +67,7 @@ static void HandleCmd(const EebusCliObject* self, char* cmd);
 static const EebusCliInterface eebus_cli_methods = {
     .destruct   = Destruct,
     .set_cs_lpc = SetCsLpc,
+    .set_cs_lpp = SetCsLpp,
     .set_eg_lpc = SetEgLpc,
     .set_eg_lpp = SetEgLpp,
     .set_mu_mpc = SetMuMpc,
@@ -78,6 +82,7 @@ EebusError EebusCliConstruct(EebusCli* self) {
   EEBUS_CLI_INTERFACE(self) = &eebus_cli_methods;
 
   self->cs_lpc_cli = NULL;
+  self->cs_lpp_cli = NULL;
   self->eg_lpc_cli = NULL;
   self->eg_lpp_cli = NULL;
   self->mu_mpc_cli = NULL;
@@ -115,6 +120,9 @@ void Destruct(EebusCliObject* self) {
   EgLpCliDelete(eebus_cli->eg_lpc_cli);
   eebus_cli->eg_lpc_cli = NULL;
 
+  CsLpCliDelete(eebus_cli->cs_lpp_cli);
+  eebus_cli->cs_lpp_cli = NULL;
+
   CsLpCliDelete(eebus_cli->cs_lpc_cli);
   eebus_cli->cs_lpc_cli = NULL;
 }
@@ -125,6 +133,14 @@ void SetCsLpc(EebusCliObject* self, CsLpUseCaseObject* cs_lpc_use_case) {
   // Release the previously created CLI instance and create a new one
   CsLpCliDelete(eebus_cli->cs_lpc_cli);
   eebus_cli->cs_lpc_cli = CsLpCliCreate(kEnergyDirectionTypeConsume, cs_lpc_use_case);
+}
+
+void SetCsLpp(EebusCliObject* self, CsLpUseCaseObject* cs_lpp_use_case) {
+  EebusCli* const eebus_cli = EEBUS_CLI(self);
+
+  // Release the previously created CLI instance and create a new one
+  CsLpCliDelete(eebus_cli->cs_lpp_cli);
+  eebus_cli->cs_lpp_cli = CsLpCliCreate(kEnergyDirectionTypeProduce, cs_lpp_use_case);
 }
 
 void SetEgLpc(
@@ -211,6 +227,8 @@ void HandleCmd(const EebusCliObject* self, char* cmd) {
   const EebusCliHandlerObject* handler = NULL;
   if (strcmp(tokens[0], "cs_lpc") == 0) {
     handler = eebus_cli->cs_lpc_cli;
+  } else if (strcmp(tokens[0], "cs_lpp") == 0) {
+    handler = eebus_cli->cs_lpp_cli;
   } else if (strcmp(tokens[0], "eg_lpc") == 0) {
     handler = eebus_cli->eg_lpc_cli;
   } else if (strcmp(tokens[0], "eg_lpp") == 0) {

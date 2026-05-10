@@ -144,6 +144,7 @@ EebusError AddLpp(Hpsrv* self, DeviceLocalObject* device_local, EntityLocalObjec
     return kEebusErrorInit;
   }
 
+  EEBUS_CLI_SET_CS_LPP(self->cli, self->cs_lpp);
   return kEebusErrorOk;
 }
 
