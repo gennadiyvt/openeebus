@@ -15,7 +15,7 @@
  */
 /**
  * @file
- * @brief CS LPC Listener implementation
+ * @brief EG LPC Listener implementation
  */
 
 #include <inttypes.h>
