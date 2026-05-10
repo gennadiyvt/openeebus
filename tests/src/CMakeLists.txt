@@ -66,6 +66,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/use_case/actor/cs/lpp
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/use_case/actor/eg/lpc
     ${EXECUTABLE_OUTPUT_PATH}/use_case/actor/eg/lpc)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/use_case/actor/eg/lpp
+    ${EXECUTABLE_OUTPUT_PATH}/use_case/actor/eg/lpp)
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/use_case/actor/ma/mpc
     ${EXECUTABLE_OUTPUT_PATH}/use_case/actor/ma/mpc)
 
