@@ -35,6 +35,7 @@ The source code in this repository implements the EEBUS protocol, based on the [
 | Use Case |  Actors  | Scenarios | Description                     |
 |----------|----------|-----------|---------------------------------|
 | LPC      |  EG, CS  |  1, 2, 4  | Limitation of power consumption |
+| LPP      |  EG, CS  |  1, 2, 4  | Limitation of power production  |
 | MPC      |  MA, MU  |   1 - 5   | Monitoring of power consumption |
 
 ### Limitations
