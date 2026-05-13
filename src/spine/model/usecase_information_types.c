@@ -95,7 +95,6 @@ bool UseCaseInformationMatch(const UseCaseInformationDataType* use_case_info, co
 
   bool match = true;
   if ((addr_a.entity == NULL) || (addr_b.entity == NULL)) {
-    match = match && (addr_a.entity == addr_b.entity);
     const size_t device_addr_len = strlen(addr_a.device);
     match = match && (strncmp(addr_a.device, addr_b.device, device_addr_len) == 0);
   } else {
