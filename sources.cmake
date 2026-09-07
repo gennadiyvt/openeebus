@@ -9,6 +9,7 @@ set(SOURCES
   src/cli/eebus_cli_mu_mpc.c
   src/cli/eebus_cli_ma_mgcp.c
   src/cli/eebus_cli_gcp_mgcp.c
+  src/cli/eebus_cli_remote_arg.c
   src/common/debug.c
   src/common/eebus_device_info.c
   src/common/eebus_math/eebus_math.c
@@ -164,6 +165,7 @@ set(HEADERS
   src/cli/eebus_cli_mu_mpc.h
   src/cli/eebus_cli_ma_mgcp.h
   src/cli/eebus_cli_gcp_mgcp.h
+  src/cli/eebus_cli_remote_arg.h
   src/common/api/eebus_mutex_interface.h
   src/common/api/eebus_queue_interface.h
   src/common/api/eebus_timer_interface.h
